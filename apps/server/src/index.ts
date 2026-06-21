@@ -129,6 +129,7 @@ app.post("/watcher/trigger-shock", async (c) => {
 const server = serve({
   fetch: app.fetch,
   port: config.port,
+  hostname: "0.0.0.0",
 }, (info) => {
   console.log(`[BE Agent] API Server running on http://localhost:${info.port}`);
   if (config.mockMode) console.log(`[BE Agent] Running in MOCK MODE`);
