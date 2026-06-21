@@ -4,6 +4,8 @@ import { suiClient } from "../chain/suiClient.js";
 import { DEMO_POSITIONS } from "../services/mockData.js";
 import { deepbookClient } from "../services/deepbookClient.js";
 import { Network, TurbosSdk } from "turbos-clmm-sdk";
+import * as supabaseService from "../services/supabaseService.js";
+import { pythClient } from "../services/pythClient.js";
 
 /**
  * Canonical token for correlation/pricing. ETH-family wrappers collapse to ETH so
@@ -108,6 +110,21 @@ export const scout = {
         }
       }
 
+    
+    // Initialize baseline prices in Supabase if empty (first-time setup)
+    if (config.supabase.url) {
+      const existingBaselines = await supabaseService.getBaselinePrices(walletAddress).catch(() => ({}));
+      const hasBaselines = Object.keys(existingBaselines).length > 0;
+      
+      if (!hasBaselines && positions.length > 0) {
+        const uniqueTokens = Array.from(new Set(positions.map(p => p.token).filter(Boolean)));
+        if (uniqueTokens.length > 0) {
+          const initialPrices = await pythClient.getCurrentPrices(uniqueTokens as string[]).catch(() => ({}));
+          await supabaseService.setBaselinePrices(walletAddress, portfolioId, initialPrices).catch(console.error);
+          console.log(`[scout] Initial baseline prices set for ${walletAddress.slice(0, 10)}...`);
+        }
+      }
+    }
       return positions;
     } catch (err) {
       console.error("[scout] failed to discover positions on-chain, falling back to demo:", err);

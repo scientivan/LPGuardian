@@ -9,6 +9,7 @@
 import { config, resolvePortfolio } from "../config.js";
 import { strategist, buildPlanFromAllocation } from "./strategist.js";
 import { pythClient } from "../services/pythClient.js";
+import * as supabaseService from "../services/supabaseService.js";
 
 export type SaveEvent =
   | { kind: "trigger"; asset: string; pct: number; text: string }
@@ -20,7 +21,6 @@ type Subscriber = (e: SaveEvent) => void;
 class Watcher {
   private guarded = new Map<string, { capId: string; portfolioId: string; clusterToken?: string }>();
   private subscribers = new Set<Subscriber>();
-  private priceCache = new Map<string, number>();
   private timer?: NodeJS.Timeout;
 
   /** Arm Guard for a wallet. capId/portfolioId fall back to the resolved demo cap. */
@@ -77,25 +77,40 @@ class Watcher {
 
       const currentPrices = await pythClient.getCurrentPrices(Array.from(tokens));
 
-      for (const [token, currentPrice] of Object.entries(currentPrices)) {
-        const previousPrice = this.priceCache.get(token);
+      for (const [wallet, guard] of this.guarded) {
+        if (!guard.clusterToken) continue;
+        
+        // Load config and baselines from Supabase
+        const guardConfig = await supabaseService.getGuardConfig(wallet).catch(() => null);
+        if (guardConfig && !guardConfig.guardEnabled) continue; // Skip if guard disabled by user
+        
+        const threshold = guardConfig?.thresholdPct ?? config.watcher.thresholdPct;
+        const baselines = await supabaseService.getBaselinePrices(wallet).catch(() => ({} as Record<string, number>));
+        const baseline = baselines[guard.clusterToken];
+        
+        const currentPrice = currentPrices[guard.clusterToken];
+        
+        if (baseline && currentPrice) {
+          const pctChange = ((currentPrice - baseline) / baseline) * 100;
 
-        if (previousPrice) {
-          const pctChange = ((currentPrice - previousPrice) / previousPrice) * 100;
-
-          if (pctChange <= config.watcher.thresholdPct) {
-            console.log(`[watcher] ⚠ ${token} dropped ${pctChange.toFixed(2)}% (threshold: ${config.watcher.thresholdPct}%)`);
-
-            for (const [wallet, guard] of this.guarded) {
-              if (guard.clusterToken === token) {
-                console.log(`[watcher] Autonomous save → ${wallet.slice(0, 10)}…`);
-                this.fireShock(wallet, token, pctChange).catch(console.error);
-              }
-            }
+          if (pctChange <= threshold) {
+            console.log(`[watcher] WARN: ${guard.clusterToken} dropped ${pctChange.toFixed(2)}% vs baseline (threshold: ${threshold}%)`);
+            console.log(`[watcher] Autonomous save -> ${wallet.slice(0, 10)}...`);
+            
+            // Log the breach event
+            await supabaseService.logEvent(wallet, guard.portfolioId, "threshold_breach", {
+              asset: guard.clusterToken,
+              dropPct: pctChange,
+              baseline,
+              currentPrice
+            }).catch(console.error);
+            
+            this.fireShock(wallet, guard.clusterToken, pctChange).catch(console.error);
           }
         }
-
-        this.priceCache.set(token, currentPrice);
+        
+        // Update last check timestamp
+        await supabaseService.updateLastCheck(wallet).catch(() => {});
       }
     } catch (err) {
       console.error("[watcher] tick error:", err);
@@ -120,6 +135,21 @@ class Watcher {
     const plan = buildPlanFromAllocation(health);
     const { txDigest, explorer } = await strategist.executeRebalance(guard.capId, guard.portfolioId, plan);
     await strategist.mintReport(guard.capId, guard.portfolioId, { ...health, txDigest });
+    
+    // Log rebalance event to Supabase
+    await supabaseService.logEvent(walletAddress, guard.portfolioId, "rebalance", {
+      asset,
+      dropPct: pct,
+      txDigest,
+      moneySaved: sim.guarded.moneySaved
+    }).catch(console.error);
+    
+    // Auto-refresh baseline prices after successful rebalance
+    const uniqueTokens = Array.from(new Set((health.positions || []).map(p => p.token).filter(Boolean)));
+    if (uniqueTokens.length > 0) {
+      const newPrices = await pythClient.getCurrentPrices(uniqueTokens as string[]).catch(() => ({}));
+      await supabaseService.setBaselinePrices(walletAddress, guard.portfolioId, newPrices).catch(console.error);
+    }
 
     const targetPct = health.suggestedAllocation?.allocations.find((a) => a.token === health.cluster.token)?.targetPct ?? 40;
     this.emit({

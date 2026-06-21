@@ -6,6 +6,8 @@ import type {
   RiskLevel,
 } from "@lp-guardian/core";
 import { config, explorerTx, resolvePortfolio } from "../config.js";
+import { pythClient } from "../services/pythClient.js";
+import * as supabaseService from "../services/supabaseService.js";
 import { beData } from "../services/beDataClient.js";
 import { scout } from "./scout.js";
 import { suiClient, strategistKeypair } from "../chain/suiClient.js";
@@ -105,6 +107,20 @@ export const strategist = {
     const sim = await this.simulate(walletAddress, health.cluster.token, -10);
     const report = await this.mintReport(capId, portfolioId, { ...health, txDigest });
 
+
+    // Log manual rebalance event to Supabase
+    await supabaseService.logEvent(walletAddress, portfolioId, "manual_rebalance", {
+      txDigest,
+      moneySaved: sim.guarded.moneySaved,
+      clusterToken: health.cluster.token
+    }).catch(console.error);
+    
+    // Auto-refresh baseline prices after successful rebalance
+    const uniqueTokens = Array.from(new Set((health.positions || []).map(p => p.token).filter(Boolean)));
+    if (uniqueTokens.length > 0) {
+      const newPrices = await pythClient.getCurrentPrices(uniqueTokens as string[]).catch(() => ({}));
+      await supabaseService.setBaselinePrices(walletAddress, portfolioId, newPrices).catch(console.error);
+    }
     return { txDigest, explorer, moneySaved: sim.guarded.moneySaved, reportTxDigest: report.txDigest, preview: plan.preview };
   },
 
