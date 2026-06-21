@@ -67,7 +67,16 @@ export const strategist = {
     const priceHistory = await scout.priceHistory(positions.flatMap((p) => [p.tokenX, p.tokenY]));
 
     const risk = await beData.risk(positions, priceHistory);
-    const stress = await beData.stress(positions, priceHistory, risk["cluster"].token, -10);
+    const fallbackAsset = positions.map((p) => p.token || p.tokenX || p.tokenY).find((value) => !!value)?.trim();
+    const stressAsset = (risk["cluster"].token || fallbackAsset || "").trim();
+    const stress = stressAsset
+      ? await beData.stress(positions, priceHistory, stressAsset, -10)
+      : {
+          scenario: { asset: "", pct: -10 },
+          atRiskUSD: 0,
+          priceProvenance: { mode: "synthetic", warnings: ["stress skipped: no cluster asset"] },
+          guarded: { moneySaved: 0, postHealth: risk["healthScore"] },
+        };
 
     const totalValueUSD = positions.reduce((s, p) => s + p.valueUSD, 0);
     const bleedingPools = positions
