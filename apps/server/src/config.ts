@@ -28,9 +28,10 @@ export const config = {
     privateKey: process.env.STRATEGIST_PRIVATE_KEY ?? "",
   },
 
-  watcher: {
+    watcher: {
     enabled: (process.env.WATCHER_ENABLED ?? "true") === "true",
     pollMs: Number(process.env.WATCHER_POLL_MS ?? 5000),
+    thresholdPct: Number(process.env.WATCHER_THRESHOLD_PCT ?? -5), // default -5% drop triggers save
   },
 
   pyth: {
