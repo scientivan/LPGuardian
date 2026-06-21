@@ -37,6 +37,12 @@ export const config = {
     hermesUrl: process.env.PYTH_HERMES_URL ?? "https://hermes.pyth.network",
   },
 
+  ai: {
+    apiKey: process.env.GEMINI_API_KEY ?? "",
+    model: process.env.AI_MODEL ?? "gemini-1.5-flash",
+    enabled: !!process.env.GEMINI_API_KEY,
+  },
+
   // When no package is deployed yet, run on mock data so every surface works.
   get mockMode() {
     return (process.env.MOCK_MODE ?? (this.sui.packageId === "0x0" ? "true" : "false")) === "true";
