@@ -38,7 +38,7 @@ const installSteps = [
 
 const mcpConfigHosted = `{
   "mcpServers": {
-    "luber": {
+    "lp-guardian": {
       "type": "http",
       "url": "${hostedUrl}"
     }
@@ -47,7 +47,7 @@ const mcpConfigHosted = `{
 
 const mcpConfigLocal = `{
   "mcpServers": {
-    "luber": {
+    "lp-guardian": {
       "command": "node",
       "args": ["/absolute/path/to/Luber/apps/mcp-server/dist/server.js"]
     }
@@ -58,6 +58,11 @@ const verifyToolCall = `discover_positions
 walletAddress: 0x8a4...92f`;
 
 const tools = [
+  {
+    name: "check_lp_position",
+    purpose: "Quick LP position check for a Sui wallet. In demo mode, returns fixture data for the configured demo wallet.",
+    params: [["walletAddress", "string", "yes", "Sui wallet address (0x...)"]],
+  },
   {
     name: "discover_positions",
     purpose: "Find real Cetus LP positions held by a Sui wallet from mainnet. Use this FIRST before diagnosing.",
@@ -100,6 +105,14 @@ const tools = [
     ],
   },
   {
+    name: "migrate_pool",
+    purpose: "Simulate LP migration for demo positions without broadcasting a live transaction.",
+    params: [
+      ["walletAddress", "string", "yes", "Wallet used for demo or flow context"],
+      ["positionId", "string", "yes", "LP position objectId or demo position id"],
+    ],
+  },
+  {
     name: "arm_guard",
     purpose: "Open web link to mint revocable Guard capability with wallet approval.",
     params: [["walletAddress", "string", "yes", "Wallet to arm Guard for"]],
@@ -115,8 +128,8 @@ const securityRules = [
   "MCP can read and analyze public wallet and pool data.",
   "MCP does not access private keys.",
   "MCP does not silently execute transactions.",
-  "Rebalance execution happens only in web flow.",
-  "Transactions require explicit wallet approval before execution.",
+  "Action approval happens only in the web flow.",
+  "Transactions require explicit wallet approval before strategist execution.",
 ] as const;
 
 const troubleshooting = [
@@ -295,10 +308,10 @@ export function Docs() {
         </div>
         <h1>Install MCP. Diagnose with agent. Approve with wallet.</h1>
         <p>
-          Add our hosted MCP URL to your AI client to immediately gain access to seven tools: discover, diagnose, deep-dive, simulate, and guard your Sui LP positions.
+          Add our hosted MCP URL to your AI client to immediately gain access to Luber's LP analysis and guarded action tools for Sui wallets.
         </p>
         <p className="docs-security-note">
-          The agent only reads data. All transactions are signed safely in the web app with explicit wallet approval.
+          The agent reads and reasons over wallet data. Any action still requires explicit wallet approval in the web flow.
         </p>
         <div className="docs-hero-actions">
           <a href="#installation">
@@ -314,12 +327,12 @@ export function Docs() {
         <article>
           <Code2 aria-hidden="true" />
           <b>Discover &rarr; Diagnose &rarr; Deep-dive</b>
-          <span>Agent discovers real positions on Sui mainnet, user picks which to diagnose, then picks a pool for deep analysis. Results open in the web app.</span>
+          <span>Agent discovers real positions on Sui mainnet, user picks which to diagnose, then drills into a pool discovered from that wallet. Results open in the web app.</span>
         </article>
         <article>
           <ShieldCheck aria-hidden="true" />
           <b>Simulate &amp; Guard</b>
-          <span>Simulate price shocks across the portfolio. Activate autonomous Guard via a signed web transaction that monitors and saves positions automatically.</span>
+          <span>Simulate price shocks across the portfolio. Activate autonomous Guard via a signed web flow that scopes strategist permissions on-chain.</span>
         </article>
         <article>
           <WalletCards aria-hidden="true" />
@@ -429,8 +442,8 @@ export function Docs() {
               <span>04 / AGENT CAPABILITIES &amp; FLOW</span>
               <CheckCircle2 aria-hidden="true" />
             </div>
-            <h2>Seven tools. One guided flow.</h2>
-            <p>The agent follows a structured sequence: discover positions on-chain → diagnose portfolio-level risk → deep-dive into a flagged pool → optionally simulate a price shock or activate autonomous Guard. All transaction signing happens on the web app, never in the agent.</p>
+            <h2>Nine tools. One guided flow.</h2>
+            <p>The agent follows a structured sequence: discover positions on-chain → diagnose portfolio-level risk → deep-dive into a flagged pool → optionally simulate a price shock, review demo migration output, or activate autonomous Guard. Wallet approval happens in the web app, never inside the agent.</p>
             <div className="docs-tool-list">
               {tools.map((tool) => (
                 <ToolTable key={tool.name} name={tool.name} purpose={tool.purpose} params={tool.params} />
@@ -454,7 +467,7 @@ export function Docs() {
               <span>06 / SECURITY MODEL</span>
               <CheckCircle2 aria-hidden="true" />
             </div>
-            <h2>AI Agent reads. Sui Wallet approves.</h2>
+            <h2>AI Agent analyzes. Sui Wallet approves.</h2>
             <ul className="docs-rule-list">
               {securityRules.map((rule) => (
                 <li key={rule}>

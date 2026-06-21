@@ -27,24 +27,24 @@ const integrations = ["Hermes", "OpenClaw", "Claude", "GPT / Codex", "Local agen
 
 const steps = [
   ["01", "Install MCP Server", "Add Luber to the AI client or agent you already use."],
-  ["02", "Enter Wallet Address", "Ask your agent to inspect a Slush wallet or a specific Cetus pool."],
+  ["02", "Enter Wallet Address", "Ask your agent to inspect a Sui wallet and drill into pools discovered from that wallet."],
   ["03", "Get LLM Diagnosis", "Receive structured portfolio or pool risk analysis with evidence."],
-  ["04", "Execute Safely on Web", "Review, sign, and execute rebalance actions through Slush."],
+  ["04", "Execute Safely on Web", "Review the plan, approve with your wallet, and execute scoped rebalance actions through the web flow."],
 ];
 
 const features = [
-  ["01", "Impermanent Loss Analytics", "Estimate hidden loss exposure against fees, volatility, and range behavior.", "yellow"],
-  ["02", "Web3 Authentication", "Sign a message with Slush to create a secure, passwordless session.", "mint"],
-  ["03", "PTB Execution", "Bundle withdraw, swap, and deposit steps into one reviewable Sui transaction flow.", "orange"],
+  ["01", "Impermanent Loss Analytics", "Estimate hidden loss exposure against concentration risk, range behavior, and modeled stress scenarios.", "yellow"],
+  ["02", "Web3 Authentication", "Sign a message with your Sui wallet to create a secure, passwordless session.", "mint"],
+  ["03", "PTB Execution", "Run scoped, atomic rebalance execution through a guarded Sui transaction flow.", "orange"],
   ["04", "Portfolio Diagnosis", "Analyze detected LP positions and surface aggregate wallet risk.", "blue"],
   ["05", "Pool Diagnosis", "Inspect Cetus tick ranges, active-range status, and position-specific risk.", "lavender"],
   ["06", "Diagnostic History", "Compare stored AI diagnostics over time before taking action.", "violet"],
 ] as const;
 
 const faqs = [
-  ["Can an AI agent move my funds?", "No. MCP tools can diagnose public wallet and pool data, but transaction execution only happens in the web app after explicit Slush approval."],
-  ["What can Luber diagnose?", "Luber can analyze portfolio-level LP risk and individual Cetus pools, including range activity, fee performance, volatility exposure, and suggested next steps."],
-  ["Do I need to connect a wallet to run a diagnosis?", "An agent can inspect public wallet data from an address. Connecting a wallet is only needed for web authentication, diagnostic history, and approving execution."],
+  ["Can an AI agent move my funds?", "No. MCP tools diagnose public wallet and pool data. Any action still requires explicit wallet approval in the web flow, and strategist permissions stay scoped on-chain."],
+  ["What can Luber diagnose?", "Luber analyzes portfolio-level LP risk and wallet-linked Cetus pools, including range activity, cluster concentration, modeled shock exposure, and suggested next steps."],
+  ["Do I need to connect a wallet to run a diagnosis?", "An agent can inspect public wallet data from an address. Connecting a wallet is only needed for protected web flows such as authentication and action approval."],
   ["Is Luber financial advice?", "No. Luber provides risk analysis, not financial advice. Slippage and market movement may affect any rebalance execution."],
 ] as const;
 
@@ -110,7 +110,7 @@ export function Landing() {
             <p className="of-kicker"><span>Sui Overflow 2026</span> AI × DeFi infrastructure</p>
             <h1>Luber</h1>
             <h2>Universal AI assistant for Sui liquidity risk.</h2>
-            <p className="of-hero-text">Connect Luber to your MCP-compatible AI agent, diagnose Cetus LP positions, review diagnostic history, and approve safer rebalance execution through Slush.</p>
+            <p className="of-hero-text">Connect Luber to your MCP-compatible AI agent, diagnose Cetus LP positions, review diagnostic history, and approve safer rebalance execution through your Sui wallet.</p>
             <div className="of-hero-actions">
               <LandingActionButton tone="dark" onClick={() => nav("/docs#installation")}>Install MCP</LandingActionButton>
               <LandingActionButton tone="yellow" onClick={() => nav("/docs")}>Read documentation</LandingActionButton>
@@ -159,13 +159,13 @@ export function Landing() {
           <div className="of-chain-arrow" aria-hidden="true"><ArrowRight /></div>
           <DemoPanel index="02" title="Luber MCP" body="Returns risk signals and evidence." icon={<Check />} />
           <div className="of-chain-arrow" aria-hidden="true"><ArrowRight /></div>
-          <DemoPanel index="03" title="Web App" body="Review and sign with Slush." icon={<WalletCards />} />
+          <DemoPanel index="03" title="Web App" body="Review and approve with your Sui wallet." icon={<WalletCards />} />
         </div>
       </section>
 
       <section id="docs" className="of-stack">
         <div className="of-section-top"><span>Built With</span><span>&lt;stack&gt; Sui-first, agent-ready &lt;/stack&gt;</span></div>
-        <div className="of-stack-content"><div><h2>Infrastructure you can inspect.</h2><p>Sui data, Cetus analytics, MCP tools, Zod schemas, and Slush-approved PTBs.</p></div><div className="of-stack-table">{["Sui Network", "Cetus Protocol", "MCP", "Zod", "Slush Wallet", "PTB Execution"].map((item, index) => <span key={item}><b>{String(index + 1).padStart(2, "0")}</b>{item}</span>)}</div></div>
+        <div className="of-stack-content"><div><h2>Infrastructure you can inspect.</h2><p>Sui data, Cetus analytics, MCP tools, Zod schemas, and wallet-approved PTB execution.</p></div><div className="of-stack-table">{["Sui Network", "Cetus Protocol", "MCP", "Zod", "Sui Wallet", "PTB Execution"].map((item, index) => <span key={item}><b>{String(index + 1).padStart(2, "0")}</b>{item}</span>)}</div></div>
       </section>
 
       <section className="of-faq">
@@ -192,5 +192,3 @@ function FaqItem({ question, answer }: { question: string; answer: string }) {
   const answerId = useId();
   return <article className={`of-faq-item ${open ? "open" : ""}`}><button className="of-faq-trigger" type="button" aria-expanded={open} aria-controls={answerId} onClick={() => setOpen((value) => !value)}><span>{question}</span><ChevronDown aria-hidden="true" /></button><div id={answerId} className="of-faq-answer" aria-hidden={!open}><div><p>{answer}</p></div></div></article>;
 }
-
-
