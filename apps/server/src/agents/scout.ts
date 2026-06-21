@@ -1,16 +1,17 @@
-import type { Position, Protocol } from "@lp-guardian/core";
+import type { Position } from "@lp-guardian/core";
 import { config } from "../config.js";
 import { suiClient } from "../chain/suiClient.js";
 import { DEMO_POSITIONS, demoPriceHistory } from "../services/mockData.js";
 
 /**
- * Scout — discovers all LP positions for a wallet as Sui objects, and pulls the
- * price history needed for correlation.
+ * Scout â€” discovers all LP positions for a wallet as Sui on-chain objects,
+ * enriches them using public DEX REST APIs (Cetus/Turbos), and pulls historical
+ * price feeds for correlation analysis.
  */
 export const scout = {
   async discoverPositions(walletAddress: string): Promise<Position[]> {
-    // We target the mainnet/testnet release now. Find the Portfolio object owned by the wallet.
-    // For MVP/Demo, we might rely on config.sui.portfolioId if set, otherwise search owned objects.
+    if (config.mockMode) return DEMO_POSITIONS;
+
     const portfolioId = config.sui.portfolioId;
     if (!portfolioId || portfolioId === "0x0") {
       console.warn("[Scout] No portfolio ID configured, falling back to mock");
@@ -18,86 +19,169 @@ export const scout = {
     }
 
     try {
-      // 1. Get dynamic fields (Positions) attached to the Portfolio
+      // 1. Get dynamic field children (Position objects) from the Portfolio shared object
       const dfRes = await suiClient.getDynamicFields({ parentId: portfolioId });
       
-      const positionObjectIds = dfRes.data
-        .filter(df => df.objectType.includes("::Position"))
-        .map(df => df.objectId);
+      // Position objects are stored with numeric keys (0, 1, 2, ...)
+      const positionDFs = dfRes.data.filter(df => 
+        df.objectType.includes("::lp_guardian::Position") || 
+        typeof df.name.value === "number"
+      );
 
-      if (positionObjectIds.length === 0) return [];
+      if (positionDFs.length === 0) {
+        console.warn("[Scout] No positions found in portfolio");
+        return [];
+      }
 
-      // 2. Fetch the actual position objects
+      // 2. Fetch the actual Position objects
+      const positionIds = positionDFs.map(df => df.objectId);
       const objects = await suiClient.multiGetObjects({
-        ids: positionObjectIds,
-        options: { showContent: true }
+        ids: positionIds,
+        options: { showContent: true },
       });
 
-      // 3. Map and enrich with Cetus/Turbos metadata
-      const positions: Position[] = [];
-      for (const obj of objects) {
-        if (obj.error || !obj.data) continue;
-        const mapped = await mapObjectToPosition(obj.data);
-        if (mapped) positions.push(mapped);
+      const positions = objects
+        .map(obj => mapObjectToPosition(obj))
+        .filter((p): p is Position => p !== null);
+
+      if (positions.length === 0) {
+        return [];
+      }
+
+      // 3. Fetch Cetus pool metadata from REST API to enrich inRange status
+      const cetusPools = await fetchCetusPools();
+
+      // Enrich positions with pool state
+      for (const pos of positions) {
+        if (pos.protocol === "cetus") {
+          const cetusPool = cetusPools.find(p => p.pool_address === pos.poolId);
+          if (cetusPool) {
+            const currentTick = Number(cetusPool.current_tick);
+            // Positions contain tick limits. We assume they are stored as numbers in our fields.
+            // Under normal CLMM, if current_tick is outside [tick_lower, tick_upper], it's out of range.
+            const tickLower = (pos as any).tickLower ?? 0;
+            const tickUpper = (pos as any).tickUpper ?? 0;
+            if (tickLower !== 0 || tickUpper !== 0) {
+              pos.inRange = currentTick >= tickLower && currentTick <= tickUpper;
+            }
+          }
+        }
       }
 
       return positions;
     } catch (err) {
-      console.error("[Scout] Failed to discover positions:", err);
-      return DEMO_POSITIONS; // Fallback to mock on error during dev
+      console.error("[scout] failed to discover positions on-chain, falling back to demo:", err);
+      return DEMO_POSITIONS;
     }
   },
 
-  async priceHistory(_tokens: string[]): Promise<Record<string, number[]>> {
-    // Real: Pyth/Hermes historical or a price-history provider. 
-    // Skeleton ready for mainnet integration.
-    return demoPriceHistory();
+  /** Fetch historical prices from Pyth Benchmarks TV Shim or CoinGecko */
+  async priceHistory(tokens: string[]): Promise<Record<string, number[]>> {
+    if (config.mockMode) return demoPriceHistory();
+
+    const history: Record<string, number[]> = {};
+    const toTimestamp = Math.floor(Date.now() / 1000);
+    const fromTimestamp = toTimestamp - 30 * 24 * 60 * 60; // 30 days ago
+
+    try {
+      for (const token of tokens) {
+        // Parse coin symbol, e.g. "0x00...::sui::SUI" -> "SUI"
+        const symbol = token.split("::").pop()?.toUpperCase() || "SUI";
+        const prices = await fetchPythHistoricalPrices(symbol, fromTimestamp, toTimestamp);
+        if (prices.length > 0) {
+          history[token] = prices;
+        }
+      }
+
+      // If empty or missing, fallback to demo price history
+      if (Object.keys(history).length === 0) {
+        return demoPriceHistory();
+      }
+
+      return history;
+    } catch (err) {
+      console.error("[scout] failed to fetch real price history, falling back to demo:", err);
+      return demoPriceHistory();
+    }
   },
 };
 
-/**
- * Converts a raw Sui object (from the Move contract) into a core Position.
- * Enriches with Cetus/Turbos metadata via API/RPC.
- */
-async function mapObjectToPosition(obj: any): Promise<Position | null> {
-  const content = obj.content;
-  if (!content || content.dataType !== "moveObject") return null;
+/** Parses Sui object response into LP Position domain structure */
+function mapObjectToPosition(obj: any): Position | null {
+  if (!obj || obj.error || !obj.data || !obj.data.content) return null;
+  const content = obj.data.content;
+  if (content.dataType !== "moveObject") return null;
 
-  const fields = content.fields as any;
-  const protocolId = Number(fields.protocol);
-  const protocolName: Protocol = protocolId === 0 ? "cetus" : protocolId === 1 ? "turbos" : "deepbook";
-  
-  const tokenX = fields.token_x || "UNKNOWN";
-  const tokenY = fields.token_y || "UNKNOWN";
+  const fields = content.fields;
+  const objectId = obj.data.objectId;
 
-  // Base position mapping from on-chain struct
-  const position: Position = {
-    objectId: obj.objectId,
-    protocol: protocolName,
+  const protocolVal = Number(fields.protocol);
+  const protocol: "cetus" | "turbos" | "deepbook" | "kriya" =
+    protocolVal === 0 ? "cetus" :
+    protocolVal === 1 ? "turbos" :
+    protocolVal === 2 ? "deepbook" : "kriya";
+
+  const tokenX = fields.token_x;
+  const tokenY = fields.token_y;
+
+  return {
+    objectId,
+    protocol,
     poolId: fields.pool_id,
     pair: `-`,
     tokenX,
     tokenY,
-    valueUSD: Number(fields.value_usd) / 1e6, // Assuming 6 decimals for USD representation
-    inRange: true, // Will be updated via enrichment
-    isDust: false
+    valueUSD: Number(fields.value_usd || 0),
+    inRange: true, // Default true, enriched later
+    daysOutOfRange: 0,
+    isDust: Number(fields.value_usd) < 5, // Dust threshold: < $5
+    // Attach raw fields for range calculations
+    ...({
+      tickLower: Number(fields.tick_lower ?? 0),
+      tickUpper: Number(fields.tick_upper ?? 0),
+      liquidity: fields.liquidity,
+    } as any)
   };
+}
 
-  // Enrich with Cetus/Turbos metadata
+/** Fetches active Cetus pools from public REST API */
+async function fetchCetusPools(): Promise<any[]> {
   try {
-    if (protocolName === "cetus") {
-      // Mock Cetus SDK call - in real app, use @cetusprotocol/cetus-sui-clmm-sdk
-      // const pool = await cetusSdk.Pool.getPool(fields.pool_id);
-      position.inRange = true; 
-      position.isDust = position.valueUSD < 5;
-    } else if (protocolName === "turbos") {
-      // Mock Turbos SDK call - in real app, use turbos-clmm-sdk
-      position.inRange = false;
-      position.daysOutOfRange = 2;
-    }
+    const res = await fetch("https://api-sui.cetus.zone/v2/sui/pools");
+    if (!res.ok) return [];
+    const json: any = await res.json();
+    return json.data?.pools || [];
   } catch (err) {
-    console.warn("[Scout] Failed to fetch metadata for  pool", err);
+    console.error("[scout] failed to fetch Cetus pools:", err);
+    return [];
   }
+}
 
-  return position;
+/** Fetches historical daily prices using free Pyth Benchmarks API */
+async function fetchPythHistoricalPrices(symbol: string, from: number, to: number): Promise<number[]> {
+  try {
+    // Map common token symbols to Pyth symbol names
+    const pythSymbolMap: Record<string, string> = {
+      "SUI": "Crypto.SUI/USD",
+      "ETH": "Crypto.ETH/USD",
+      "BTC": "Crypto.BTC/USD",
+      "USDC": "Crypto.USDC/USD",
+      "USDT": "Crypto.USDT/USD",
+    };
+    const pythSymbol = pythSymbolMap[symbol] || `Crypto.${symbol}/USD`;
+
+    const url = `https://benchmarks.pyth.network/v1/shims/tradingview/history?symbol=${pythSymbol}&resolution=D&from=${from}&to=${to}`;
+    const res = await fetch(url);
+    if (!res.ok) return [];
+    const json: any = await res.json();
+    
+    // Pyth TV history response uses 'c' array for close prices
+    if (json && Array.isArray(json.c)) {
+      return json.c.map((val: any) => Number(val));
+    }
+    return [];
+  } catch (err) {
+    console.error(`[scout] failed to fetch historical prices for ${symbol}:`, err);
+    return [];
+  }
 }
