@@ -8,6 +8,7 @@ import { config } from "./config.js";
 import { strategist } from "./agents/strategist.js";
 import { scout } from "./agents/scout.js";
 import { watcher } from "./agents/watcher.js";
+import * as supabaseService from "./services/supabaseService.js";
 import { verifyPersonalMessageSignature } from "@mysten/sui/verify";
 import type { PortfolioHealth, ShockResult, HistoryItem } from "@lp-guardian/core";
 import { wsHandler } from "./websocket/wsHandler.js";
