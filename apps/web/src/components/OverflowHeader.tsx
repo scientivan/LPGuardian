@@ -1,4 +1,4 @@
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, Menu, X } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 
 const navItems = [
@@ -47,6 +47,9 @@ export function OverflowHeader({
             <i /> Operational
           </b>
         </div>
+        <Link className="of-header-history" to="/history">
+          Diagnostic History
+        </Link>
         <Link className="of-header-launch" to="/atlas">
           <span className="of-header-launch-icon" aria-hidden="true">
             <ArrowRight />
@@ -60,10 +63,10 @@ export function OverflowHeader({
           type="button"
           aria-expanded={mobileMenuOpen}
           aria-controls="mobile-section-menu"
-          aria-label="Open section menu"
+          aria-label={mobileMenuOpen ? "Close section menu" : "Open section menu"}
           onClick={onToggleMenu}
         >
-          Menu
+          {mobileMenuOpen ? <X size={18} /> : <Menu size={18} />}
         </button>
       )}
       {onNavigate && (
@@ -78,6 +81,8 @@ export function OverflowHeader({
               {label}
             </button>
           ))}
+          <Link to="/history">History</Link>
+          <Link to="/atlas">Launch App</Link>
         </div>
       )}
     </header>

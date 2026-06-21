@@ -136,19 +136,23 @@ export async function logEvent(
     moneySaved?: number;
   }
 ): Promise<void> {
+  const payload = {
+    wallet_address: walletAddress,
+    portfolio_id: portfolioId,
+    event_type: eventType,
+    details: {
+      ...(details || {}),
+      level: metadata?.level ?? "portfolio",
+      poolId: metadata?.poolId,
+      summary: metadata?.summary,
+      txDigest: metadata?.txDigest,
+      moneySaved: metadata?.moneySaved,
+    },
+  };
+
   const { error } = await supabase.admin
     .from("history_logs")
-    .insert({
-      wallet_address: walletAddress,
-      portfolio_id: portfolioId,
-      event_type: eventType,
-      details: details || {},
-      level: metadata?.level ?? "portfolio",
-      pool_id: metadata?.poolId,
-      summary: metadata?.summary,
-      tx_digest: metadata?.txDigest,
-      money_saved: metadata?.moneySaved,
-    });
+    .insert(payload);
 
   if (error) console.error(`Failed to log event: ${error.message}`);
 }
@@ -158,20 +162,27 @@ export async function getHistory(
   limit: number = 50,
   filter: "portfolio" | "pool" | "all" = "all"
 ): Promise<any[]> {
-  let query = supabase.admin
+  const query = supabase.admin
     .from("history_logs")
     .select("*")
     .eq("wallet_address", walletAddress)
     .order("created_at", { ascending: false })
     .limit(limit);
-  if (filter !== "all") query = query.eq("level", filter);
+
   const { data, error } = await query;
 
   if (error) {
     console.error(`Failed to get history: ${error.message}`);
     return [];
   }
-  return data || [];
+
+  const items = (data || []).filter((event: any) => {
+    if (filter === "all") return true;
+    const level = event.level ?? event.details?.level ?? "portfolio";
+    return level === filter;
+  });
+
+  return items;
 }
 
 export async function confirmGuard(
