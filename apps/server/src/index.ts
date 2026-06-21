@@ -101,7 +101,7 @@ app.post("/portfolio/history", async (c) => {
     const rawEvents = await supabaseService.getHistory(walletAddress, 50);
     items = rawEvents.map((e: any) => ({
       id: e.id,
-      type: e.event_type === "rebalance" ? "autonomous_save" : e.event_type === "threshold_breach" ? "shock" : "diagnosis",
+      type: e.event_type === "rebalance" ? "autonomous_save" : e.event_type === "manual_rebalance" ? "fix" : "diagnosis",
       level: "portfolio",
       timestamp: e.created_at,
       summary: e.event_type === "rebalance" ? `Rebalanced ${e.details.asset} cluster. Saved ~$${Math.round(e.details.moneySaved || 0)}` : e.event_type === "threshold_breach" ? `${e.details.asset} dropped ${Math.abs(e.details.dropPct).toFixed(2)}%` : e.event_type,
