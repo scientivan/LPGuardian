@@ -1,4 +1,5 @@
-﻿import "dotenv/config";
+﻿import { config as loadEnv } from "dotenv";
+import { fileURLToPath } from "node:url";
 import { Server } from "@modelcontextprotocol/sdk/server/index.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/streamableHttp.js";
@@ -19,6 +20,8 @@ import {
   DEMO_WALLET,
   isDemoMode,
 } from "./demoData.js";
+
+loadEnv({ path: fileURLToPath(new URL("../../../.env", import.meta.url)), override: false });
 
 const API = process.env.LPG_API_BASE ?? "http://localhost:8787";
 const WEB = process.env.LPG_WEB_BASE ?? "http://localhost:3100";
@@ -56,6 +59,18 @@ function isValidSuiAddress(addr: string): boolean {
 // ─── Tool definitions ────────────────────────────────────────────────────────
 
 const TOOLS = [
+  {
+    name: "check_lp_position",
+    description:
+      "Quickly list LP positions for a Sui wallet. Uses local fixture data when backend DEMO_MODE is enabled and the wallet matches DEMO_WALLET. Read-only.",
+    inputSchema: {
+      type: "object" as const,
+      properties: {
+        walletAddress: { type: "string", description: "Sui wallet address (0x...)" },
+      },
+      required: ["walletAddress"],
+    },
+  },
   {
     name: "discover_positions",
     description:
@@ -152,6 +167,19 @@ const TOOLS = [
     },
   },
   {
+    name: "migrate_pool",
+    description:
+      "Migrate an LP position. For configured demo positions this returns a simulated result and never signs or broadcasts a transaction.",
+    inputSchema: {
+      type: "object" as const,
+      properties: {
+        walletAddress: { type: "string", description: "Sui wallet address" },
+        positionId: { type: "string", description: "LP position object ID from check_lp_position or discover_positions" },
+      },
+      required: ["walletAddress", "positionId"],
+    },
+  },
+  {
     name: "arm_guard",
     description:
       "Start setting up autonomous Guard. Does NOT sign or move anything — returns a web link where the OWNER signs once to mint the revocable StrategistCap. Use when the user says 'guard it', 'protect my portfolio', or 'turn on autopilot'.",
@@ -210,7 +238,11 @@ async function handleTool(name: string, args: Record<string, unknown>) {
   const demoLabel = "[Demo data] ";
 
   switch (name) {
+<<<<<<< HEAD
     // ── discover_positions ──────────────────────────────────────────────
+=======
+    case "check_lp_position":
+>>>>>>> 05956928e06550dfe2dd5edfd1c9b280430ddc97
     case "discover_positions": {
       if (demoActive) {
         const positions = demoPositions;
@@ -240,11 +272,18 @@ async function handleTool(name: string, args: Record<string, unknown>) {
       }
       const total = positions.reduce((s: number, p: any) => s + (p.valueUSD || 0), 0);
       const lines = positions.map(
+<<<<<<< HEAD
         (p: any, i: number) =>
           `${i + 1}. ${p.pair} — ~$${Math.round(p.valueUSD).toLocaleString()} ${p.inRange ? "(in range)" : "⚠ out of range"}${p.isDust ? " · dust" : ""}\n   id: ${p.objectId}`
+=======
+        (p, i) =>
+          `${i + 1}. ${p.pair} — ~$${Math.round(p.valueUSD).toLocaleString()} ${p.inRange ? "(in range)" : "⚠ out of range"}${p.isDust ? " · dust" : ""}${p.recommendation === "migrate" ? " · migrate recommended" : ""}\n   id: ${p.objectId}`
+>>>>>>> 05956928e06550dfe2dd5edfd1c9b280430ddc97
       );
       const text = [
-        `Found ${positions.length} real Cetus position${positions.length > 1 ? "s" : ""} (~$${Math.round(total).toLocaleString()} total, value estimated on-chain):`,
+        data.source === "demo"
+          ? `Demo data: found ${positions.length} fixture LP positions (~$${Math.round(total).toLocaleString()} total). No chain/indexer query was used.`
+          : `Found ${positions.length} real Cetus position${positions.length > 1 ? "s" : ""} (~$${Math.round(total).toLocaleString()} total, value estimated on-chain):`,
         ...lines,
         `\nReply with which ones to diagnose (e.g. "diagnose 1 and 3"), or "all".`,
       ].join("\n");
@@ -279,6 +318,7 @@ async function handleTool(name: string, args: Record<string, unknown>) {
       });
       const h = data;
       const text = [
+        h.source === "demo" ? "Demo data: local fixture; no chain/indexer position read." : "",
         `Health: ${h.healthScore}/100 (${h.riskLevel})`,
         `You have ${h.positionCount} LP positions worth ~$${Math.round(h.totalValueUSD).toLocaleString()}.`,
         `But ${h.cluster.exposurePct}% is really one ${h.cluster.token} bet.`,
@@ -430,7 +470,23 @@ async function handleTool(name: string, args: Record<string, unknown>) {
       );
     }
 
+<<<<<<< HEAD
     // ── guard_status ────────────────────────────────────────────────────
+=======
+    case "migrate_pool": {
+      const positionId = args.positionId as string;
+      if (!positionId) return errorResult("Please specify a positionId.");
+      const data: any = await apiPost("/portfolio/migrate", {
+        walletAddress: addr,
+        positionId,
+      });
+      return textResult(
+        `Demo data: ${data.summary}\nSimulated tx: ${data.txDigest}`,
+        data,
+      );
+    }
+
+>>>>>>> 05956928e06550dfe2dd5edfd1c9b280430ddc97
     case "guard_status": {
       if (demoActive) {
         const data = demoGuardStatus;
