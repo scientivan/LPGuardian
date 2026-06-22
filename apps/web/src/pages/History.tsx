@@ -3,7 +3,7 @@ import { Link, useParams } from "react-router-dom";
 import { ArrowLeft, ArrowUpRight, ExternalLink, ShieldCheck, WalletCards } from "lucide-react";
 import { useCurrentAccount, useDAppKit, useWallets } from "@mysten/dapp-kit-react";
 import { fetchHistory } from "../lib/api.js";
-import type { HistoryItem } from "@lp-guardian/core";
+import type { HistoryItem } from "@luber/core";
 import { HoverGridBackground } from "../components/HoverGridBackground.js";
 import "../styles/history.css";
 

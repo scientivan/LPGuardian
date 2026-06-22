@@ -5,7 +5,7 @@ import type {
   ShockResult,
   RiskLevel,
   Position,
-} from "@lp-guardian/core";
+} from "@luber/core";
 import { config, explorerTx, resolveActionPortfolio, resolvePortfolio } from "../config.js";
 import { pythClient } from "../services/pythClient.js";
 import * as supabaseService from "../services/supabaseService.js";

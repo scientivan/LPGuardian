@@ -1,4 +1,4 @@
-import type { Position } from "@lp-guardian/core";
+import type { Position } from "@luber/core";
 import { config, resolvePortfolio } from "../config.js";
 import { suiClient, discoveryClient } from "../chain/suiClient.js";
 import { DEMO_POSITIONS } from "../services/mockData.js";

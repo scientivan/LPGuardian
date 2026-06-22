@@ -1,4 +1,4 @@
-# BE Agent — LP Guardian (Sui)
+# BE Agent — Luber (Sui)
 
 The glue + the only on-chain *signer*. Hosts:
 
@@ -18,8 +18,8 @@ and never signs.
 ## Run
 
 ```bash
-pnpm --filter @lp-guardian/server dev          # API on :8787
-pnpm --filter @lp-guardian/server watcher      # autonomous watcher loop
+pnpm --filter @luber/server dev          # API on :8787
+pnpm --filter @luber/server watcher      # autonomous watcher loop
 ```
 
 Set `MOCK_MODE=true` (default when no `LPG_PACKAGE_ID`) to run entirely on mock
@@ -46,7 +46,7 @@ The diagnose/simulate pipeline runs on **real** data when `MOCK_MODE` is off
 # 1) BE Data (compute)
 cd services/be-data && uvicorn main:app --port 8000
 # 2) BE Agent (.env must have LPG_PACKAGE_ID / LPG_PORTFOLIO_ID / demo ids)
-pnpm install && pnpm --filter @lp-guardian/server dev      # :8787
+pnpm install && pnpm --filter @luber/server dev      # :8787
 # 3) diagnose a demo portfolio (pass its portfolioId as walletAddress)
 curl -XPOST localhost:8787/portfolio/health -H 'content-type: application/json' \
   -d '{"walletAddress":"<LPG_DEMO_AMBER_PORTFOLIO>"}'

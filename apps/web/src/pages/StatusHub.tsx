@@ -1,7 +1,7 @@
 import { useEffect, useState, useRef } from "react";
 import { Link } from "react-router-dom";
 import { RefreshCw, ArrowLeft, ArrowUpRight } from "lucide-react";
-import type { SystemStatus } from "@lp-guardian/core";
+import type { SystemStatus } from "@luber/core";
 import { fetchSystemStatus } from "../lib/api.js";
 import { useRealtime } from "../lib/useRealtime.js";
 import { HoverGridBackground } from "../components/HoverGridBackground.js";

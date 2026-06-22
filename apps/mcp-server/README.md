@@ -1,8 +1,8 @@
-# LP Guardian MCP Server
+# Luber MCP Server
 
-MCP server for LP Guardian — plugs into Claude Code, Claude Desktop, Cursor, or any
+MCP server for Luber — plugs into Claude Code, Claude Desktop, Cursor, or any
 MCP-compatible host. It exposes read/reasoning tools only (diagnose, simulate,
-history) and proxies them to the LP Guardian backend API. It never holds keys or
+history) and proxies them to the Luber backend API. It never holds keys or
 signs transactions — signing happens on the web app via a returned link.
 
 It supports two transports:
@@ -47,15 +47,15 @@ This is what `.mcp.json` at the repo root is wired for.
    # from repo root
    pnpm dev:mcp:http        # tsx watch, auto-reloads (dev)
    # or, production build:
-   pnpm --filter @lp-guardian/mcp-server start:http
+   pnpm --filter @luber/mcp-server start:http
    ```
-   You should see: `LP Guardian MCP server running on http://localhost:8765/mcp`
+   You should see: `Luber MCP server running on http://localhost:8765/mcp`
 
 3. **`.mcp.json`** (already committed at repo root) registers it for this project:
    ```json
    {
      "mcpServers": {
-       "lp-guardian": {
+       "luber": {
          "type": "http",
          "url": "http://localhost:8765/mcp"
        }
@@ -63,7 +63,7 @@ This is what `.mcp.json` at the repo root is wired for.
    }
    ```
 
-4. **Connect in Claude Code:** run `/mcp` — `lp-guardian` should show as connected
+4. **Connect in Claude Code:** run `/mcp` — `luber` should show as connected
    and its 5 tools available. (First time, Claude Code asks you to approve the
    project's MCP servers — say yes.)
 
@@ -93,7 +93,7 @@ This is what `.mcp.json` at the repo root is wired for.
    ```json
    {
      "mcpServers": {
-       "lp-guardian": {
+       "luber": {
          "command": "node",
          "args": ["/absolute/path/to/LPG/SUI/apps/mcp-server/dist/server.js"],
          "env": {
@@ -106,7 +106,7 @@ This is what `.mcp.json` at the repo root is wired for.
    ```
    (The host launches this process for you — no need to start it manually.)
 
-3. **Restart the host** — LP Guardian tools appear in the tool palette.
+3. **Restart the host** — Luber tools appear in the tool palette.
 
 ## Development
 

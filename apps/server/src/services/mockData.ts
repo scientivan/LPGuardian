@@ -1,4 +1,4 @@
-import type { Position } from "@lp-guardian/core";
+import type { Position } from "@luber/core";
 
 /** Canonical demo-1 wallet: 5 positions that are secretly one 87% ETH bet. */
 export const DEMO_POSITIONS: Position[] = [

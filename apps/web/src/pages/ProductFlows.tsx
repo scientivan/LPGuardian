@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { useCurrentAccount, useDAppKit, useWallets } from "@mysten/dapp-kit-react";
 import { Transaction } from "@mysten/sui/transactions";
-import type { PoolDeepDive, PortfolioHealth, RebalanceIntent, ShockResult } from "@lp-guardian/core";
+import type { PoolDeepDive, PortfolioHealth, RebalanceIntent, ShockResult } from "@luber/core";
 import { ProductShell } from "../components/ProductShell.js";
 import {
   confirmGuard,

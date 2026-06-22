@@ -7,6 +7,18 @@ import {
   ListToolsRequestSchema,
 } from "@modelcontextprotocol/sdk/types.js";
 import { createServer as createHttpServer, type IncomingMessage } from "node:http";
+import {
+  isDemoRequest,
+  demoPositions,
+  demoPortfolioHealth,
+  demoPoolDives,
+  demoShock,
+  demoHistory,
+  demoGuardStatus,
+  demoMigratePool,
+  DEMO_WALLET,
+  isDemoMode,
+} from "./demoData.js";
 
 const API = process.env.LPG_API_BASE ?? "http://localhost:8787";
 const WEB = process.env.LPG_WEB_BASE ?? "http://localhost:3100";
@@ -74,7 +86,7 @@ const TOOLS = [
           type: "string",
           enum: ["wallet", "portfolio"],
           description:
-            "'wallet' = diagnose the wallet's REAL on-chain Cetus positions; 'portfolio' (default) = the LP Guardian demo portfolio.",
+            "'wallet' = diagnose the wallet's REAL on-chain Cetus positions; 'portfolio' (default) = the Luber demo portfolio.",
         },
         positionIds: {
           type: "array",
@@ -125,7 +137,7 @@ const TOOLS = [
   {
     name: "get_history",
     description:
-      "Show past LP Guardian activity for a wallet: diagnoses run, one-sig fixes, and autonomous saves performed by Guard. Use when the user asks 'what did you do', 'show my history', or 'what happened while I was away'.",
+      "Show past Luber activity for a wallet: diagnoses run, one-sig fixes, and autonomous saves performed by Guard. Use when the user asks 'what did you do', 'show my history', or 'what happened while I was away'.",
     inputSchema: {
       type: "object" as const,
       properties: {
@@ -163,17 +175,60 @@ const TOOLS = [
       required: ["walletAddress"],
     },
   },
+  {
+    name: "migrate_pool",
+    description:
+      "Migrate an LP position from a bleeding/out-of-range pool to a better one. In demo mode, simulates the migration without any real transaction. Use after deep_diagnose_pool reveals a position that should be migrated.",
+    inputSchema: {
+      type: "object" as const,
+      properties: {
+        walletAddress: {
+          type: "string",
+          description: "Sui wallet address",
+        },
+        positionId: {
+          type: "string",
+          description: "Position object ID to migrate (from discover_positions or diagnose_portfolio)",
+        },
+      },
+      required: ["walletAddress", "positionId"],
+    },
+  },
 ];
 // ─── Tool handlers ───────────────────────────────────────────────────────────
 
 async function handleTool(name: string, args: Record<string, unknown>) {
   const addr = args.walletAddress as string | undefined;
-  if (addr && !isValidSuiAddress(addr)) {
+
+  // In demo mode, accept the demo wallet even if it fails the hex pattern check
+  const demoActive = addr ? isDemoRequest(addr) : false;
+
+  if (addr && !demoActive && !isValidSuiAddress(addr)) {
     return errorResult("That doesn't look like a valid Sui address.");
   }
 
+  const demoLabel = "[Demo data] ";
+
   switch (name) {
+    // ── discover_positions ──────────────────────────────────────────────
     case "discover_positions": {
+      if (demoActive) {
+        const positions = demoPositions;
+        const total = positions.reduce((s, p) => s + p.valueUSD, 0);
+        const lines = positions.map(
+          (p, i) =>
+            `${i + 1}. ${p.pair} — ~$${Math.round(p.valueUSD).toLocaleString()} ${p.inRange ? "(in range)" : "⚠ out of range"}${p.isDust ? " · dust" : ""}\n   id: ${p.objectId}`
+        );
+        const text = [
+          `${demoLabel}Found ${positions.length} LP positions (~$${Math.round(total).toLocaleString()} total):`,
+          ...lines,
+          `\nReply with which ones to diagnose (e.g. "diagnose 1 and 3"), or "all".`,
+        ].join("\n");
+        return {
+          content: [{ type: "text" as const, text }],
+          structuredContent: { positions, count: positions.length, source: "demo", webLink: `${WEB}/d/${addr}?s=discover` },
+        };
+      }
       const data: any = await apiPost("/wallet/positions", {
         walletAddress: addr,
       });
@@ -183,9 +238,9 @@ async function handleTool(name: string, args: Record<string, unknown>) {
           "No Cetus LP positions found for that wallet on mainnet. (Real LP liquidity lives on Sui mainnet — testnet wallets usually have none.)"
         );
       }
-      const total = positions.reduce((s, p) => s + (p.valueUSD || 0), 0);
+      const total = positions.reduce((s: number, p: any) => s + (p.valueUSD || 0), 0);
       const lines = positions.map(
-        (p, i) =>
+        (p: any, i: number) =>
           `${i + 1}. ${p.pair} — ~$${Math.round(p.valueUSD).toLocaleString()} ${p.inRange ? "(in range)" : "⚠ out of range"}${p.isDust ? " · dust" : ""}\n   id: ${p.objectId}`
       );
       const text = [
@@ -199,7 +254,22 @@ async function handleTool(name: string, args: Record<string, unknown>) {
       };
     }
 
+    // ── diagnose_portfolio ──────────────────────────────────────────────
     case "diagnose_portfolio": {
+      if (demoActive) {
+        const h = demoPortfolioHealth;
+        const text = [
+          `${demoLabel}Health: ${h.healthScore}/100 (${h.riskLevel})`,
+          `You have ${h.positionCount} LP positions worth ~$${Math.round(h.totalValueUSD).toLocaleString()}.`,
+          `But ${h.cluster.exposurePct}% is really one ${h.cluster.token} bet.`,
+          `If ${h.cluster.token} drops ${Math.abs(h.stress.pct)}%, you lose ~$${Math.round(h.stress.atRiskUSD)} across all of them at once.`,
+          ...(h.insights || []).map((i) => `⚠ ${i.title}: ${i.description}`),
+        ].join("\n");
+        return {
+          content: [{ type: "text" as const, text }],
+          structuredContent: { ...h, webLink: `${WEB}/d/${addr}?s=preview` },
+        };
+      }
       const data: any = await apiPost("/portfolio/health", {
         walletAddress: addr,
         ...(args.source ? { source: args.source } : {}),
@@ -224,8 +294,26 @@ async function handleTool(name: string, args: Record<string, unknown>) {
       };
     }
 
+    // ── deep_diagnose_pool ──────────────────────────────────────────────
     case "deep_diagnose_pool": {
       const poolId = args.poolId as string;
+      if (demoActive) {
+        const data = demoPoolDives[poolId];
+        if (!data) return errorResult(`${demoLabel}No demo data for pool ${poolId}. Valid demo pools: ${Object.keys(demoPoolDives).join(", ")}`);
+        const text = [
+          `${demoLabel}Pool: ${data.pair} (${data.protocol})`,
+          `Status: ${data.inRange ? "In range" : `Out of range for ${data.daysOutOfRange ?? "?"} days`}`,
+          `Estimated impermanent loss: $${Math.round(data.estImpermanentLossUSD ?? 0)}`,
+          `Contribution to dominant cluster: ${data.contributionToClusterPct ?? 0}%`,
+          `Exit depth: $${Math.round(data.exitLiquidity?.depthUSD ?? 0).toLocaleString()} (${data.exitLiquidity?.feasible ? "feasible" : "constrained"})`,
+          ...(data.diagnosis ? [`\nDiagnosis: ${data.diagnosis.message}`, `Recommendation: ${data.diagnosis.recommendation}`] : []),
+          ...(data.canMigrate ? [`\nMigration available → ${data.migrationTarget.poolName} (est. APR ${data.migrationTarget.estimatedApr}%)`] : []),
+        ].filter(Boolean).join("\n");
+        return {
+          content: [{ type: "text" as const, text }],
+          structuredContent: { ...data, webLink: `${WEB}/d/${addr}/pool/${poolId}?s=preview` },
+        };
+      }
       if (!poolId || !isValidSuiAddress(poolId)) {
         return errorResult("That doesn't look like a valid pool ID.");
       }
@@ -251,12 +339,27 @@ async function handleTool(name: string, args: Record<string, unknown>) {
       };
     }
 
+    // ── simulate_shock ──────────────────────────────────────────────────
     case "simulate_shock": {
       const asset = args.asset as string;
       const pct = args.pct as number;
       if (!asset) return errorResult("Please specify an asset to shock.");
       if (typeof pct !== "number" || pct < -100 || pct > 100) {
         return errorResult("Percentage must be between -100 and 100.");
+      }
+      if (demoActive) {
+        const data = demoShock(asset, pct);
+        const direction = pct < 0 ? "drops" : "rises";
+        const text = [
+          `${demoLabel}If ${asset.toUpperCase()} ${direction} ${Math.abs(pct)}%:`,
+          `  You lose ~$${Math.round(data.atRiskUSD)} across your portfolio.`,
+          `  With Guard on, I'd save you ~$${Math.round(data.guarded.moneySaved)} of that.`,
+          `  Post-guard health: ${data.guarded.postHealth}/100`,
+        ].join("\n");
+        return {
+          content: [{ type: "text" as const, text }],
+          structuredContent: { ...data, webLink: `${WEB}/d/${addr}?sim=${asset}:${pct}` },
+        };
       }
       const data: any = await apiPost("/simulate/shock", {
         walletAddress: addr,
@@ -266,9 +369,9 @@ async function handleTool(name: string, args: Record<string, unknown>) {
       const direction = pct < 0 ? "drops" : "rises";
       const text = [
         `If ${asset} ${direction} ${Math.abs(pct)}%:`,
-        `  💸 You lose ~$${Math.round(data.atRiskUSD)} across your portfolio.`,
-        `  🛡️ With Guard on, I'd save you ~$${Math.round(data.guarded.moneySaved)} of that.`,
-        `  📊 Post-guard health: ${data.guarded.postHealth}/100`,
+        `  You lose ~$${Math.round(data.atRiskUSD)} across your portfolio.`,
+        `  With Guard on, I'd save you ~$${Math.round(data.guarded.moneySaved)} of that.`,
+        `  Post-guard health: ${data.guarded.postHealth}/100`,
       ].join("\n");
       return {
         content: [{ type: "text" as const, text }],
@@ -279,7 +382,18 @@ async function handleTool(name: string, args: Record<string, unknown>) {
       };
     }
 
+    // ── get_history ─────────────────────────────────────────────────────
     case "get_history": {
+      if (demoActive) {
+        const lines = demoHistory.items.map(
+          (item) =>
+            `[${item.type}] ${item.summary}${item.moneySaved ? ` (saved ~$${item.moneySaved})` : ""} — ${new Date(item.timestamp).toLocaleDateString()}`
+        );
+        return {
+          content: [{ type: "text" as const, text: `${demoLabel}\n${lines.join("\n")}` }],
+          structuredContent: { ...demoHistory, webLink: `${WEB}/history/${addr}` },
+        };
+      }
       const filter = (args.filter as string) || "all";
       const data: any = await apiPost("/portfolio/history", {
         walletAddress: addr,
@@ -301,7 +415,14 @@ async function handleTool(name: string, args: Record<string, unknown>) {
       };
     }
 
+    // ── arm_guard ───────────────────────────────────────────────────────
     case "arm_guard": {
+      if (demoActive) {
+        return textResult(
+          `${demoLabel}Guard armed (simulated). I'm watching your SUI cluster — if it drops 5%, I'll rebalance autonomously. StrategistCap minted (demo). I still physically can't withdraw your funds — enforced by Move.`,
+          { action: "mint_strategist_cap", source: "demo", webLink: `${WEB}/guard/${addr}` }
+        );
+      }
       const webLink = `${WEB}/guard/${addr}`;
       return textResult(
         `To arm Guard, sign once here — you mint a revocable capability; I still physically can't withdraw your funds (enforced by Move): ${webLink}`,
@@ -309,7 +430,29 @@ async function handleTool(name: string, args: Record<string, unknown>) {
       );
     }
 
+    // ── guard_status ────────────────────────────────────────────────────
     case "guard_status": {
+      if (demoActive) {
+        const data = demoGuardStatus;
+        const webLink = `${WEB}/guard/${addr}`;
+        const recent = (data.recentActivity || [])
+          .slice(0, 3)
+          .map(
+            (a) =>
+              `  [${a.type}] ${a.summary}${a.moneySaved ? ` (saved ~$${Math.round(a.moneySaved)})` : ""}`
+          );
+        const text = [
+          `${demoLabel}Guard is ${data.guardEnabled ? "ON" : "OFF"}${data.watching ? " · watching live" : ""}.`,
+          data.clusterToken ? `Protecting your ${data.clusterToken} cluster.` : "",
+          `Triggers an autonomous rebalance if it drops ${Math.abs(data.thresholdPct)}%.`,
+          data.lastCheckAt ? `Last checked: ${new Date(data.lastCheckAt).toLocaleString()}` : "",
+          recent.length ? `Recent activity:\n${recent.join("\n")}` : "No saves yet — all quiet.",
+        ].filter(Boolean).join("\n");
+        return {
+          content: [{ type: "text" as const, text }],
+          structuredContent: { ...data, webLink },
+        };
+      }
       const data: any = await apiPost("/guard/status", { walletAddress: addr });
       const webLink = `${WEB}/guard/${addr}`;
       if (!data.guardEnabled && !data.watching) {
@@ -327,10 +470,10 @@ async function handleTool(name: string, args: Record<string, unknown>) {
         .slice(0, 3)
         .map(
           (a: any) =>
-            `  • [${a.type}] ${a.summary}${a.moneySaved ? ` (saved ~$${Math.round(a.moneySaved)})` : ""}`
+            `  [${a.type}] ${a.summary}${a.moneySaved ? ` (saved ~$${Math.round(a.moneySaved)})` : ""}`
         );
       const text = [
-        `🛡️ Guard is ${data.guardEnabled ? "ON" : "OFF"}${data.watching ? " · watching live" : ""}.`,
+        `Guard is ${data.guardEnabled ? "ON" : "OFF"}${data.watching ? " · watching live" : ""}.`,
         data.clusterToken ? `Protecting your ${data.clusterToken} cluster.` : "",
         `Triggers an autonomous rebalance if it drops ${Math.abs(data.thresholdPct)}%.`,
         data.lastCheckAt ? `Last checked: ${new Date(data.lastCheckAt).toLocaleString()}` : "",
@@ -344,6 +487,27 @@ async function handleTool(name: string, args: Record<string, unknown>) {
       };
     }
 
+    // ── migrate_pool (demo-only tool) ───────────────────────────────────
+    case "migrate_pool": {
+      const positionId = args.positionId as string;
+      if (!positionId) return errorResult("Please specify a positionId to migrate.");
+      if (demoActive && positionId.startsWith("0xdemo_pos")) {
+        const result = demoMigratePool(positionId);
+        const text = [
+          `${demoLabel}${result.message}`,
+          `TX: ${result.txDigest}`,
+          `Moved to ${result.migratedPosition.toPool} pool`,
+          `New range: ${result.migratedPosition.newRange.minPrice} – ${result.migratedPosition.newRange.maxPrice}`,
+          `Estimated APR: ${result.migratedPosition.estimatedApr}%`,
+        ].join("\n");
+        return {
+          content: [{ type: "text" as const, text }],
+          structuredContent: result,
+        };
+      }
+      return errorResult("migrate_pool is only available in demo mode with demo positions.");
+    }
+
     default:
       return errorResult(`Unknown tool: ${name}`);
   }
@@ -354,7 +518,7 @@ async function handleTool(name: string, args: Record<string, unknown>) {
 /** Builds a fresh MCP server instance with all tools wired up. */
 function buildServer() {
   const server = new Server(
-    { name: "lp-guardian", version: "0.1.0" },
+    { name: "luber", version: "0.1.0" },
     { capabilities: { tools: {} } }
   );
 
@@ -388,7 +552,7 @@ async function runStdio() {
   const server = buildServer();
   const transport = new StdioServerTransport();
   await server.connect(transport);
-  console.error("[MCP] LP Guardian MCP server running on stdio");
+  console.error(`[MCP] Luber MCP server running on stdio${isDemoMode() ? ` (DEMO_MODE — wallet: ${DEMO_WALLET})` : ""}`);
 }
 
 async function readJsonBody(req: IncomingMessage): Promise<unknown> {
@@ -459,7 +623,7 @@ async function runHttp() {
 
   http.listen(port, () => {
     console.error(
-      `[MCP] LP Guardian MCP server running on http://localhost:${port}/mcp`
+      `[MCP] Luber MCP server running on http://localhost:${port}/mcp${isDemoMode() ? ` (DEMO_MODE — wallet: ${DEMO_WALLET})` : ""}`
     );
   });
 }

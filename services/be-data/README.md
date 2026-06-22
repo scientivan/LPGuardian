@@ -1,4 +1,4 @@
-# BE Data — LP Guardian compute service
+# BE Data — Luber compute service
 
 Pure-compute FastAPI service. **Zero Sui dependencies** — it only does portfolio
 math (correlation, risk, stress, counterfactual). This is the unique "brain":

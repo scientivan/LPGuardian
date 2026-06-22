@@ -1,5 +1,5 @@
 {
-  "name": "@lp-guardian/mcp-server",
+  "name": "@luber/mcp-server",
   "version": "0.1.0",
   "private": true,
   "type": "module",

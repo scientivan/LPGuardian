@@ -1,7 +1,7 @@
 import { supabase } from "./supabaseClient.js";
 
 /**
- * Supabase CRUD Service for LP Guardian state management
+ * Supabase CRUD Service for Luber state management
  * Handles baseline prices, guard configuration, and event history
  */
 

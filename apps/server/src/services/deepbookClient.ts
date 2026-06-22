@@ -1,4 +1,4 @@
-import type { DeepBookLiquidityProfile } from "@lp-guardian/core";
+import type { DeepBookLiquidityProfile } from "@luber/core";
 import { suiClient } from "../chain/suiClient.js";
 
 /**

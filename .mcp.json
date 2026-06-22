@@ -1,6 +1,6 @@
 {
   "mcpServers": {
-    "lp-guardian": {
+    "luber": {
       "type": "http",
       "url": "http://localhost:8765/mcp"
     }

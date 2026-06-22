@@ -1,6 +1,6 @@
 import { createHash, randomUUID } from "node:crypto";
 import { verifyPersonalMessageSignature } from "@mysten/sui/verify";
-import type { RebalancePlan } from "@lp-guardian/core";
+import type { RebalancePlan } from "@luber/core";
 import { config, normalizeAddress } from "../config.js";
 import { supabase } from "./supabaseClient.js";
 

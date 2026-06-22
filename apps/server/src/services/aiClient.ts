@@ -2,7 +2,7 @@ import { generateObject, generateText } from "ai";
 import { google } from "@ai-sdk/google";
 import { z } from "zod";
 import { config } from "../config.js";
-import type { PortfolioHealth, Insight, Position } from "@lp-guardian/core";
+import type { PortfolioHealth, Insight, Position } from "@luber/core";
 
 // AI is disabled if no API key is set
 const isEnabled = () => config.ai.enabled;
@@ -85,7 +85,7 @@ Provide a strict JSON response diagnosing every pool provided.
 
     try {
       const prompt = `
-You are LP Guardian, an AI agent that helps users understand hidden correlation risks in their LP positions.
+You are Luber, an AI agent that helps users understand hidden correlation risks in their LP positions.
 
 Portfolio Data:
 - Health Score: ${health.healthScore}/100

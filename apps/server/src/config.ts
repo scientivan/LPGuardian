@@ -128,7 +128,7 @@ export function resolvePortfolio(walletOrPortfolio: string): { portfolioId: stri
     const d = demos.find((x) => x.portfolio === mapped);
     return { portfolioId: mapped, capId: d?.cap ?? "0x0" };
   }
-  throw new Error("Wallet is not mapped to an LP Guardian demo portfolio");
+  throw new Error("Wallet is not mapped to a Luber demo portfolio");
 }
 
 export function resolveActionPortfolio(walletAddress: string): { portfolioId: string; capId: string } {

@@ -1,4 +1,4 @@
-import { matchIntent, type Intent } from "@lp-guardian/core";
+import { matchIntent, type Intent } from "@luber/core";
 import { strategist } from "./strategist.js";
 
 export interface ChatReply {

@@ -1,4 +1,4 @@
-import type { SystemStatus } from "@lp-guardian/core";
+import type { SystemStatus } from "@luber/core";
 import { config } from "../config.js";
 import { suiClient } from "../chain/suiClient.js";
 import { watcher } from "../agents/watcher.js";

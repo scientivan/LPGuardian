@@ -38,7 +38,7 @@ const installSteps = [
 
 const mcpConfigHosted = `{
   "mcpServers": {
-    "lp-guardian": {
+    "luber": {
       "type": "http",
       "url": "${hostedUrl}"
     }
@@ -47,7 +47,7 @@ const mcpConfigHosted = `{
 
 const mcpConfigLocal = `{
   "mcpServers": {
-    "lp-guardian": {
+    "luber": {
       "command": "node",
       "args": ["/absolute/path/to/Luber/apps/mcp-server/dist/server.js"]
     }

@@ -4,7 +4,7 @@ import { Hono } from "hono";
 import { cors } from "hono/cors";
 import { logger } from "hono/logger";
 import { z } from "zod";
-import type { HistoryItem, PoolDeepDive, PortfolioHealth, ShockResult } from "@lp-guardian/core";
+import type { HistoryItem, PoolDeepDive, PortfolioHealth, ShockResult } from "@luber/core";
 import { config, configuredDemoWallets, normalizeAddress, resolveActionPortfolio } from "./config.js";
 import { strategist, buildPlanFromAllocation } from "./agents/strategist.js";
 import { scout } from "./agents/scout.js";

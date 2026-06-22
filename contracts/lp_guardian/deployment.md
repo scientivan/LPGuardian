@@ -1,4 +1,4 @@
-# LP Guardian — testnet deployment
+# Luber — testnet deployment
 
 **Package:** `0xb92cb12fa82d01848df23c3fc632421ec4c07608e8ac98fbbca11a2b62195e40` — [explorer](https://suiscan.xyz/testnet/object/0xb92cb12fa82d01848df23c3fc632421ec4c07608e8ac98fbbca11a2b62195e40)
 

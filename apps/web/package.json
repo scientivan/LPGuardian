@@ -1,5 +1,5 @@
 {
-  "name": "@lp-guardian/web",
+  "name": "@luber/web",
   "version": "0.1.0",
   "private": true,
   "type": "module",
@@ -11,7 +11,7 @@
     "test:e2e:install": "playwright install chromium"
   },
   "dependencies": {
-    "@lp-guardian/core": "workspace:*",
+    "@luber/core": "workspace:*",
     "@mysten/dapp-kit-react": "^2.1.3",
     "@mysten/sui": "^2.19.0",
     "@tanstack/react-query": "^5.60.0",

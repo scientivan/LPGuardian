@@ -203,7 +203,7 @@ class Watcher {
 
 export const watcher = new Watcher();
 
-// Allow running as a standalone process: `pnpm --filter @lp-guardian/server watcher`
+// Allow running as a standalone process: `pnpm --filter @luber/server watcher`
 if (import.meta.url === `file://${process.argv[1]}`) {
   watcher.start();
 }

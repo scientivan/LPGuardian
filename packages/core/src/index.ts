@@ -1,5 +1,5 @@
 /**
- * @lp-guardian/core — shared types & constants for the LP Guardian (Sui) monorepo.
+ * @luber/core — shared types & constants for the Luber (Sui) monorepo.
  *
  * This is the single source of truth for the data schema frozen on Day 0
  * (see brief §7 INTERFACE CONTRACTS / §8). MCP server, BE Agent, BE Data
