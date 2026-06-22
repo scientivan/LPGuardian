@@ -238,11 +238,7 @@ async function handleTool(name: string, args: Record<string, unknown>) {
   const demoLabel = "[Demo data] ";
 
   switch (name) {
-<<<<<<< HEAD
-    // ── discover_positions ──────────────────────────────────────────────
-=======
     case "check_lp_position":
->>>>>>> 05956928e06550dfe2dd5edfd1c9b280430ddc97
     case "discover_positions": {
       if (demoActive) {
         const positions = demoPositions;
@@ -272,13 +268,8 @@ async function handleTool(name: string, args: Record<string, unknown>) {
       }
       const total = positions.reduce((s: number, p: any) => s + (p.valueUSD || 0), 0);
       const lines = positions.map(
-<<<<<<< HEAD
         (p: any, i: number) =>
-          `${i + 1}. ${p.pair} — ~$${Math.round(p.valueUSD).toLocaleString()} ${p.inRange ? "(in range)" : "⚠ out of range"}${p.isDust ? " · dust" : ""}\n   id: ${p.objectId}`
-=======
-        (p, i) =>
           `${i + 1}. ${p.pair} — ~$${Math.round(p.valueUSD).toLocaleString()} ${p.inRange ? "(in range)" : "⚠ out of range"}${p.isDust ? " · dust" : ""}${p.recommendation === "migrate" ? " · migrate recommended" : ""}\n   id: ${p.objectId}`
->>>>>>> 05956928e06550dfe2dd5edfd1c9b280430ddc97
       );
       const text = [
         data.source === "demo"
@@ -470,9 +461,6 @@ async function handleTool(name: string, args: Record<string, unknown>) {
       );
     }
 
-<<<<<<< HEAD
-    // ── guard_status ────────────────────────────────────────────────────
-=======
     case "migrate_pool": {
       const positionId = args.positionId as string;
       if (!positionId) return errorResult("Please specify a positionId.");
@@ -486,7 +474,6 @@ async function handleTool(name: string, args: Record<string, unknown>) {
       );
     }
 
->>>>>>> 05956928e06550dfe2dd5edfd1c9b280430ddc97
     case "guard_status": {
       if (demoActive) {
         const data = demoGuardStatus;

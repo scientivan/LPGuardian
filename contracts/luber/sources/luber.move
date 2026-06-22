@@ -1,15 +1,5 @@
-/// LP Guardian — non-custodial portfolio capability layer (Sui Overflow 2026).
-///
-/// Design intent (see brief §6.1, §7.3):
-/// - A `Portfolio` is a shared object owned (logically) by one address. It locks a real
-///   `Balance<SUI>` vault and holds `Position` children (LP metadata) via dynamic object fields.
-/// - A `StrategistCap` is a revocable capability minted by the owner for an agent address. It lets
-///   the agent `rebalance` (within a whitelist + slippage bound) and `mint_health_report` — but the
-///   module exposes NO function that can move funds to anyone other than `portfolio.owner`.
-/// - Non-custody is structural, not a promise: `rebalance` (the agent path) never touches the vault,
-///   and `withdraw` (the only coin-exit path) rejects non-owners and hard-codes the recipient to the
-///   owner. Proven by the "agent cannot withdraw to self" unit test.
-module lp_guardian::lp_guardian;
+/// Luber - non-custodial portfolio capability layer (Sui Overflow 2026).
+module luber::luber;
 
 use std::string::String;
 use sui::balance::{Self, Balance};

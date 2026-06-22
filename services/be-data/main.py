@@ -1,4 +1,4 @@
-"""BE Data — FastAPI compute service for LP Guardian (Sui).
+"""BE Data — FastAPI compute service for Luber (Sui).
 
 Pure-compute, zero Sui deps. Implements the §7.2 contract (BE Agent → BE Data).
 """
@@ -17,7 +17,7 @@ from compute.simulation import simulate_shock
 from compute.pool import deep_diagnose_pool
 from data.prices import resolve_price_history
 
-app = FastAPI(title="LP Guardian — BE Data", version="0.1.0")
+app = FastAPI(title="Luber — BE Data", version="0.1.0")
 
 app.add_middleware(
     CORSMiddleware,

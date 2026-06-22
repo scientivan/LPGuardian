@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
-# Deploy the lp_guardian Move package to Sui testnet, then seed 3 demo portfolios.
+# Deploy the luber Move package to Sui testnet, then seed 3 demo portfolios.
 #
 #   ./scripts/deploy.sh
 #
-# Requires: sui CLI, node. Run from the package root (contracts/lp_guardian).
+# Requires: sui CLI, node. Run from the package root (contracts/luber).
 set -euo pipefail
 
 cd "$(dirname "$0")/.."

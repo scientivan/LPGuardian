@@ -1,10 +1,5 @@
-<<<<<<< HEAD
 import type { Position } from "@luber/core";
-import { config, resolvePortfolio } from "../config.js";
-=======
-import type { Position } from "@lp-guardian/core";
 import { config, isDemoWallet, resolvePortfolio } from "../config.js";
->>>>>>> 05956928e06550dfe2dd5edfd1c9b280430ddc97
 import { suiClient, discoveryClient } from "../chain/suiClient.js";
 import { DEMO_MODE_POSITIONS, DEMO_POSITIONS } from "../services/mockData.js";
 import { deepbookClient } from "../services/deepbookClient.js";
@@ -54,7 +49,7 @@ export const scout = {
       // new_value_usd[j] to position[j], so order MUST be deterministic.
       const positionDFs = dfRes.data
         .filter(df =>
-          df.objectType.includes("::lp_guardian::Position") ||
+          df.objectType.includes("::luber::Position") ||
           typeof df.name.value === "number"
         )
         .sort((a, b) => Number(a.name.value) - Number(b.name.value));

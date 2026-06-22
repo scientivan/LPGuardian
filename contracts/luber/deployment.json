@@ -1,0 +1,35 @@
+{
+  "packageId": "0xf5b23056a2cf66df0798ff4b97c8e57b7435e3d29a2166b3017cd933fe0c123f",
+  "network": "testnet",
+  "owner": "0x45fab11f7f5d870e5ee01c7536e0289059d80d18060e79839ef8f2bc3e0b2bb5",
+  "demoPortfolios": [
+    {
+      "label": "Demo1-Amber",
+      "portfolioId": "0x44360d29f5f5d1449fd79e3506305dec83b1780060574a7d69495485dd62cef6",
+      "capId": "0x0fc3730ef739d6ca68f0ebdfb5a3d4be51d5c79de69aef6b4d7b0ec84a7d8cfc",
+      "healthReportId": "0x88159ffa0f151c57effc7beaf67facacbaacbc895771806c1ed5e06e3e2951a4",
+      "healthExpected": 42,
+      "riskLevel": "amber",
+      "positionCount": 5
+    },
+    {
+      "label": "Demo2-Red",
+      "portfolioId": "0xac06b1e379006889a894802407105c065adf1e60c23509257898e131ecc4c4e1",
+      "capId": "0xb9ea5d02c25ba995b76fe0b6b83436711d007f097b08a4cf3310021694d90c1c",
+      "healthReportId": "0x7e56402cf97d3b675640a2bd7c31e0f157bbcfeaaffbf1e81fbe080b6f4415a8",
+      "healthExpected": 35,
+      "riskLevel": "red",
+      "positionCount": 8
+    },
+    {
+      "label": "Demo3-Green",
+      "portfolioId": "0x0677f941a26ca8906b290fdb1a74d3509e838b9cf2608b41517e5ae1eebb5ae1",
+      "capId": "0x3ab2fa1dff5e9b71dcec301f32d1a2bd6daf7c57dc5bea2e8ea3c286b2fcb619",
+      "healthReportId": "0x771326599e42eb66c5c3228eba004420b3dc27fde32ee780a032c0b28336bef4",
+      "healthExpected": 65,
+      "riskLevel": "green",
+      "positionCount": 3
+    }
+  ],
+  "whitelist": "[0x0000000000000000000000000000000000000000000000000000000000000101,0x0000000000000000000000000000000000000000000000000000000000000103,0x0000000000000000000000000000000000000000000000000000000000000104]"
+}

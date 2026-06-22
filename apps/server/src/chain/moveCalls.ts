@@ -1,7 +1,7 @@
 import { Transaction } from "@mysten/sui/transactions";
 import { config } from "../config.js";
 
-const target = (fn: string) => `${config.sui.packageId}::lp_guardian::${fn}`;
+const target = (fn: string) => `${config.sui.packageId}::luber::${fn}`;
 
 /**
  * Build the correlation-aware rebalance PTB. All legs (exit old / enter new via

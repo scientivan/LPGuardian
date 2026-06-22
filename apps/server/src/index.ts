@@ -4,13 +4,8 @@ import { Hono } from "hono";
 import { cors } from "hono/cors";
 import { logger } from "hono/logger";
 import { z } from "zod";
-<<<<<<< HEAD
-import type { HistoryItem, PoolDeepDive, PortfolioHealth, ShockResult } from "@luber/core";
-import { config, configuredDemoWallets, normalizeAddress, resolveActionPortfolio } from "./config.js";
-=======
-import type { HistoryItem, MigrationResult, PoolDeepDive, PortfolioHealth, ShockResult } from "@lp-guardian/core";
+import type { HistoryItem, MigrationResult, PoolDeepDive, PortfolioHealth, ShockResult } from "@luber/core";
 import { config, configuredDemoWallets, isDemoWallet, normalizeAddress, resolveActionPortfolio } from "./config.js";
->>>>>>> 05956928e06550dfe2dd5edfd1c9b280430ddc97
 import { strategist, buildPlanFromAllocation } from "./agents/strategist.js";
 import { scout } from "./agents/scout.js";
 import { watcher } from "./agents/watcher.js";
@@ -316,7 +311,7 @@ app.post("/portfolio/guard/confirm", async (c) => {
   const capChange = tx.objectChanges?.find((change: any) =>
     change.type === "created" &&
     normalizeAddress(change.objectId) === normalizeAddress(body.capId) &&
-    String(change.objectType).endsWith("::lp_guardian::StrategistCap") &&
+    String(change.objectType).endsWith("::luber::StrategistCap") &&
     change.owner?.AddressOwner &&
     normalizeAddress(change.owner.AddressOwner) === agentAddress
   );

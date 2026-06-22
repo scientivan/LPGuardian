@@ -19,8 +19,8 @@ const path = require("node:path");
 
 const PKG =
   process.env.PKG ||
-  "0xb92cb12fa82d01848df23c3fc632421ec4c07608e8ac98fbbca11a2b62195e40";
-const MODULE = "lp_guardian";
+  "0xf5b23056a2cf66df0798ff4b97c8e57b7435e3d29a2166b3017cd933fe0c123f";
+const MODULE = "luber";
 const GAS = "100000000";
 const EXPIRES = "99999999"; // far-future epoch
 const FUND_MIST = "10000000"; // 0.01 SUI deposited into each demo vault
@@ -195,7 +195,7 @@ const root = path.resolve(__dirname, "..");
 fs.writeFileSync(path.join(root, "deployment.json"), JSON.stringify(out, null, 2));
 
 const ex = (t) => `https://suiscan.xyz/testnet/object/${t}`;
-let md = `# LP Guardian — testnet deployment\n\n`;
+let md = `# Luber — testnet deployment\n\n`;
 md += `**Package:** \`${PKG}\` — [explorer](https://suiscan.xyz/testnet/object/${PKG})\n\n`;
 md += `**Network:** testnet · **Owner/deployer:** \`${OWNER}\`\n\n`;
 md += `> Demo caps are authorized to the OWNER address for seeding. BE Agent: call \`authorize_strategist\`\n`;

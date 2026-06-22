@@ -1,11 +1,11 @@
 #[test_only]
-module lp_guardian::lp_guardian_tests;
+module luber::luber_tests;
 
 use std::string;
 use sui::coin::{Self, Coin};
 use sui::sui::SUI;
 use sui::test_scenario::{Self as ts, Scenario};
-use lp_guardian::lp_guardian::{Self as lpg, Portfolio, StrategistCap, HealthReport};
+use luber::luber::{Self as lpg, Portfolio, StrategistCap, HealthReport};
 
 const OWNER: address = @0xA;
 const AGENT: address = @0xB;

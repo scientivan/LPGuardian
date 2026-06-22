@@ -320,7 +320,7 @@ export function GuardSetup() {
       const preparation = await prepareGuard(wallet, token);
       const tx = new Transaction();
       const cap = tx.moveCall({
-        target: `${preparation.packageId}::lp_guardian::authorize_strategist`,
+        target: `${preparation.packageId}::luber::authorize_strategist`,
         arguments: [
           tx.object(preparation.portfolioId),
           tx.pure.address(preparation.agentAddress),
@@ -337,7 +337,7 @@ export function GuardSetup() {
       if (!transactionResult) throw new Error("Wallet returned no transaction result");
       const created = transactionResult.effects?.changedObjects.find((change) =>
         change.idOperation === "Created" &&
-        transactionResult.objectTypes?.[change.objectId]?.endsWith("::lp_guardian::StrategistCap")
+        transactionResult.objectTypes?.[change.objectId]?.endsWith("::luber::StrategistCap")
       );
       if (!created) throw new Error("StrategistCap was not created");
       const confirmed = await confirmGuard({

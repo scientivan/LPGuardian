@@ -5,13 +5,8 @@ import type {
   ShockResult,
   RiskLevel,
   Position,
-<<<<<<< HEAD
 } from "@luber/core";
-import { config, explorerTx, resolveActionPortfolio, resolvePortfolio } from "../config.js";
-=======
-} from "@lp-guardian/core";
 import { config, explorerTx, isDemoWallet, resolveActionPortfolio } from "../config.js";
->>>>>>> 05956928e06550dfe2dd5edfd1c9b280430ddc97
 import { pythClient } from "../services/pythClient.js";
 import * as supabaseService from "../services/supabaseService.js";
 import { beData } from "../services/beDataClient.js";

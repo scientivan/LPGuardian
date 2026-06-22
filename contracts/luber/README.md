@@ -1,4 +1,4 @@
-# lp_guardian — Move package
+# luber — Move package
 
 The non-custody core. The whole trust story lives here: **the module has no
 function that can move funds to anyone but the owner.**
