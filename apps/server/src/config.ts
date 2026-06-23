@@ -99,8 +99,9 @@ function walletPortfolioMap(): Record<string, string> {
 }
 
 export function normalizeAddress(value: string): string {
-  if (!isValidSuiAddress(value)) throw new Error("Invalid Sui address");
-  return normalizeSuiAddress(value);
+  const trimmed = value.trim();
+  if (!isValidSuiAddress(trimmed)) throw new Error("Invalid Sui address");
+  return normalizeSuiAddress(trimmed);
 }
 
 export function isDemoWallet(value: string): boolean {

@@ -110,13 +110,14 @@ const poolHealthSchema = walletSchema.extend({ poolId: z.string() });
 app.post("/portfolio/pool-health", async (c) => {
   const { walletAddress, poolId } = poolHealthSchema.parse(await c.req.json());
   const wallet = normalizeAddress(walletAddress);
-  const normalizedPool = normalizeAddress(poolId);
+  const tryNormalize = (v: string) => { try { return normalizeAddress(v); } catch { return v; } };
+  const normalizedPool = tryNormalize(poolId);
   let positions = await scout.discoverWalletPositions(wallet);
   if (positions.length === 0 && configuredDemoWallets().has(wallet)) {
     positions = (await strategist.diagnose(wallet)).positions;
   }
   const position = positions.find(
-    (item) => normalizeAddress(item.poolId) === normalizedPool || normalizeAddress(item.objectId) === normalizedPool,
+    (item) => tryNormalize(item.poolId) === normalizedPool || tryNormalize(item.objectId) === normalizedPool,
   );
   if (!position) throw new Error("That pool isn't in this wallet's positions");
   const health = await strategist.diagnose(wallet, { positions });
