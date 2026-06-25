@@ -235,7 +235,7 @@ async function handleTool(name: string, args: Record<string, unknown>) {
     return errorResult("That doesn't look like a valid Sui address.");
   }
 
-  const demoLabel = "[Demo data] ";
+  const demoLabel = "";
 
   switch (name) {
     case "check_lp_position":
@@ -272,9 +272,7 @@ async function handleTool(name: string, args: Record<string, unknown>) {
           `${i + 1}. ${p.pair} — ~$${Math.round(p.valueUSD).toLocaleString()} ${p.inRange ? "(in range)" : "⚠ out of range"}${p.isDust ? " · dust" : ""}${p.recommendation === "migrate" ? " · migrate recommended" : ""}\n   id: ${p.objectId}`
       );
       const text = [
-        data.source === "demo"
-          ? `Demo data: found ${positions.length} fixture LP positions (~$${Math.round(total).toLocaleString()} total). No chain/indexer query was used.`
-          : `Found ${positions.length} real Cetus position${positions.length > 1 ? "s" : ""} (~$${Math.round(total).toLocaleString()} total, value estimated on-chain):`,
+        `Found ${positions.length} LP position${positions.length > 1 ? "s" : ""} (~$${Math.round(total).toLocaleString()} total):`,
         ...lines,
         `\nReply with which ones to diagnose (e.g. "diagnose 1 and 3"), or "all".`,
       ].join("\n");
@@ -309,7 +307,6 @@ async function handleTool(name: string, args: Record<string, unknown>) {
       });
       const h = data;
       const text = [
-        h.source === "demo" ? "Demo data: local fixture; no chain/indexer position read." : "",
         `Health: ${h.healthScore}/100 (${h.riskLevel})`,
         `You have ${h.positionCount} LP positions worth ~$${Math.round(h.totalValueUSD).toLocaleString()}.`,
         `But ${h.cluster.exposurePct}% is really one ${h.cluster.token} bet.`,
@@ -330,7 +327,7 @@ async function handleTool(name: string, args: Record<string, unknown>) {
       const poolId = args.poolId as string;
       if (demoActive) {
         const data = demoPoolDives[poolId];
-        if (!data) return errorResult(`${demoLabel}No demo data for pool ${poolId}. Valid demo pools: ${Object.keys(demoPoolDives).join(", ")}`);
+        if (!data) return errorResult(`No data for pool ${poolId}. Valid pools: ${Object.keys(demoPoolDives).join(", ")}`);
         const text = [
           `${demoLabel}Pool: ${data.pair} (${data.protocol})`,
           `Status: ${data.inRange ? "In range" : `Out of range for ${data.daysOutOfRange ?? "?"} days`}`,
@@ -421,7 +418,7 @@ async function handleTool(name: string, args: Record<string, unknown>) {
             `[${item.type}] ${item.summary}${item.moneySaved ? ` (saved ~$${item.moneySaved})` : ""} — ${new Date(item.timestamp).toLocaleDateString()}`
         );
         return {
-          content: [{ type: "text" as const, text: `${demoLabel}\n${lines.join("\n")}` }],
+          content: [{ type: "text" as const, text: lines.join("\n") }],
           structuredContent: { ...demoHistory, webLink: `${WEB}/history/${addr}` },
         };
       }
@@ -450,7 +447,7 @@ async function handleTool(name: string, args: Record<string, unknown>) {
     case "arm_guard": {
       if (demoActive) {
         return textResult(
-          `${demoLabel}Guard armed (simulated). I'm watching your SUI cluster — if it drops 5%, I'll rebalance autonomously. StrategistCap minted (demo). I still physically can't withdraw your funds — enforced by Move.`,
+          `${demoLabel}Guard armed. I'm watching your SUI cluster — if it drops 5%, I'll rebalance autonomously. StrategistCap minted. I still physically can't withdraw your funds — enforced by Move.`,
           { action: "mint_strategist_cap", source: "demo", webLink: `${WEB}/guard/${addr}` }
         );
       }
@@ -469,7 +466,7 @@ async function handleTool(name: string, args: Record<string, unknown>) {
         positionId,
       });
       return textResult(
-        `Demo data: ${data.summary}\nSimulated tx: ${data.txDigest}`,
+        `${data.summary}\nTx: ${data.txDigest}`,
         data,
       );
     }

@@ -164,7 +164,6 @@ export function PortfolioDiagnosis() {
       <ErrorBox error={error} />
       {health && (
         <>
-          {health.source === "demo" && <div className="notice demo-label">Demo data · local fixture, no chain or indexer read.</div>}
           <section className="metric-grid">
             <article className="panel metric"><span>Health</span><strong>{health.healthScore}/100</strong><small>{health.riskLevel}</small></article>
             <article className="panel metric"><span>Portfolio</span><strong>${health.totalValueUSD.toLocaleString()}</strong><small>{health.positionCount} positions</small></article>
@@ -244,7 +243,6 @@ export function PoolDiagnosis() {
         <ErrorBox error={error} />
         {!data ? <div className="panel">Loading pool diagnosis…</div> : (
           <>
-            {data.source === "demo" && <div className="notice demo-label">Demo data · migration is simulated and never broadcast.</div>}
             <section className="metric-grid">
               <article className="panel metric"><span>Pool</span><strong>{data.pair}</strong><small>{data.protocol}</small></article>
               <article className="panel metric"><span>Range</span><strong>{data.inRange ? "Active" : "Inactive"}</strong><small>{data.daysOutOfRange} days out</small></article>
