@@ -16,7 +16,6 @@ import {
   demoShock,
   demoHistory,
   demoGuardStatus,
-  demoMigratePool,
   DEMO_WALLET,
   isDemoMode,
 } from "./demoData.js";
@@ -169,7 +168,7 @@ const TOOLS = [
   {
     name: "migrate_pool",
     description:
-      "Migrate an LP position. For configured demo positions this returns a simulated result and never signs or broadcasts a transaction.",
+      "Open the signed web flow for an LP migration request. Wallet approval happens in the web app.",
     inputSchema: {
       type: "object" as const,
       properties: {
@@ -206,7 +205,7 @@ const TOOLS = [
   {
     name: "migrate_pool",
     description:
-      "Migrate an LP position from a bleeding/out-of-range pool to a better one. In demo mode, simulates the migration without any real transaction. Use after deep_diagnose_pool reveals a position that should be migrated.",
+      "Open the signed web flow for an LP migration request from a bleeding/out-of-range pool to a better one. Use after deep_diagnose_pool reveals a position that should be migrated.",
     inputSchema: {
       type: "object" as const,
       properties: {
@@ -527,25 +526,19 @@ async function handleTool(name: string, args: Record<string, unknown>) {
       };
     }
 
-    // ── migrate_pool (demo-only tool) ───────────────────────────────────
+    // ── migrate_pool ────────────────────────────────────────────────────
     case "migrate_pool": {
       const positionId = args.positionId as string;
       if (!positionId) return errorResult("Please specify a positionId to migrate.");
-      if (demoActive && positionId.startsWith("0xdemo_pos")) {
-        const result = demoMigratePool(positionId);
-        const text = [
-          `${demoLabel}${result.message}`,
-          `TX: ${result.txDigest}`,
-          `Moved to ${result.migratedPosition.toPool} pool`,
-          `New range: ${result.migratedPosition.newRange.minPrice} – ${result.migratedPosition.newRange.maxPrice}`,
-          `Estimated APR: ${result.migratedPosition.estimatedApr}%`,
-        ].join("\n");
-        return {
-          content: [{ type: "text" as const, text }],
-          structuredContent: result,
-        };
-      }
-      return errorResult("migrate_pool is only available in demo mode with demo positions.");
+      if (!addr) return errorResult("Please provide walletAddress.");
+      const poolId = demoActive && positionId.startsWith("0xdemo_pos")
+        ? (demoPositions.find((position) => position.objectId === positionId)?.poolId ?? positionId)
+        : positionId;
+      const webLink = `${WEB}/d/${addr}/pool/${poolId}`;
+      return {
+        content: [{ type: "text" as const, text: `Open the migration flow to review and sign the Sui transaction: ${webLink}` }],
+        structuredContent: { action: "open_signed_migration_flow", positionId, webLink },
+      };
     }
 
     default:

@@ -134,14 +134,13 @@ export interface PoolDeepDive {
 }
 
 export interface MigrationResult {
-  simulated: boolean;
-  source: "demo" | "chain";
   positionId: string;
   txDigest: string;
-  status: "simulated" | "submitted";
+  status: "submitted";
   fromPoolId: string;
   toPoolId: string;
   summary: string;
+  explorer?: string;
 }
 
 /** simulate_shock / /simulate/shock result. */

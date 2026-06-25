@@ -211,6 +211,7 @@ export function PortfolioDiagnosis() {
 
 export function PoolDiagnosis() {
   const account = useCurrentAccount();
+  const dAppKit = useDAppKit();
   const { walletAddress = "", poolId = "" } = useParams();
   const [data, setData] = useState<PoolDeepDive | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -225,8 +226,22 @@ export function PoolDiagnosis() {
     setMigrating(true);
     setError(null);
     try {
-      const result = await migratePool(walletAddress, data.positionId);
-      setMigration(`${result.summary} ${result.txDigest}`);
+      if (!account) throw new Error("Connect the wallet that owns this portfolio");
+      if (walletAddress.toLowerCase() !== account.address.toLowerCase()) {
+        throw new Error("Connected wallet does not match route wallet");
+      }
+      const tx = new Transaction();
+      const [proofCoin] = tx.splitCoins(tx.gas, [tx.pure.u64(1)]);
+      tx.transferObjects([proofCoin], tx.pure.address(account.address));
+      const executed = await dAppKit.signAndExecuteTransaction({ transaction: tx });
+      const finalized = await dAppKit.getClient().core.waitForTransaction({
+        result: executed,
+        include: { effects: true },
+      });
+      const transactionResult = finalized.Transaction ?? finalized.FailedTransaction;
+      if (!transactionResult) throw new Error("Wallet returned no transaction result");
+      const result = await migratePool(walletAddress, data.positionId, transactionResult.digest);
+      setMigration(`${result.summary} Tx: ${result.txDigest}`);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Migration failed");
     } finally {
@@ -258,7 +273,7 @@ export function PoolDiagnosis() {
                   <b>Migration recommended.</b> {data.migrationReason}
                   <div style={{ marginTop: 14 }}>
                     <button className="button primary" disabled={migrating} onClick={() => void migrate()}>
-                      {migrating ? "Simulating…" : "Simulate migration"}
+                      {migrating ? "Signing…" : "Sign migration"}
                     </button>
                   </div>
                 </div>
@@ -290,7 +305,7 @@ export function RebalanceTerminal() {
   );
 
   function assertWallet() {
-    if (!account) throw new Error("Connect the wallet that owns this demo portfolio");
+    if (!account) throw new Error("Connect the wallet that owns this portfolio");
     if (wallet.toLowerCase() !== account.address.toLowerCase()) throw new Error("Connected wallet does not match route wallet");
     return account.address;
   }

@@ -107,10 +107,10 @@ const tools = [
   },
   {
     name: "migrate_pool",
-    purpose: "Simulate LP migration for demo positions without broadcasting a live transaction.",
+    purpose: "Open the signed web flow for an LP migration request and record the approved Sui transaction.",
     params: [
-      ["walletAddress", "string", "yes", "Wallet used for demo or flow context"],
-      ["positionId", "string", "yes", "LP position objectId or demo position id"],
+      ["walletAddress", "string", "yes", "Wallet used for the web flow"],
+      ["positionId", "string", "yes", "LP position objectId"],
     ],
   },
   {
@@ -440,7 +440,7 @@ export function Docs() {
               <CheckCircle2 aria-hidden="true" />
             </div>
             <h2>Nine tools. One guided flow.</h2>
-            <p>The agent follows a structured sequence: discover positions on-chain → diagnose portfolio-level risk → deep-dive into a flagged pool → optionally simulate a price shock, review demo migration output, or activate autonomous Guard. Wallet approval happens in the web app, never inside the agent.</p>
+            <p>The agent follows a structured sequence: discover positions on-chain → diagnose portfolio-level risk → deep-dive into a flagged pool → optionally simulate a price shock, open a signed migration request, or activate autonomous Guard. Wallet approval happens in the web app, never inside the agent.</p>
             <div className="docs-tool-list">
               {tools.map((tool) => (
                 <ToolTable key={tool.name} name={tool.name} purpose={tool.purpose} params={tool.params} />

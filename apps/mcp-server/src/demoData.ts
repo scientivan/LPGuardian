@@ -368,29 +368,3 @@ export const demoGuardStatus = {
   ],
   source: "demo",
 };
-
-// ─── Simulated Migration (migrate_pool) ─────────────────────────────────────
-
-export function demoMigratePool(positionId: string) {
-  const pos = demoPositions.find((p) => p.objectId === positionId);
-  const pool = pos ? demoPoolDives[pos.poolId] : null;
-  const target = pool?.migrationTarget;
-
-  return {
-    source: "demo",
-    status: "success",
-    txDigest: `DEMO_TX_MIGRATE_${Date.now()}`,
-    message: target
-      ? `Migration simulated successfully. Moved from ${pos?.pair ?? "?"} to ${target.poolName}.`
-      : `Migration simulated successfully.`,
-    migratedPosition: {
-      fromPositionId: positionId,
-      toPool: target?.poolName ?? "SUI/USDC",
-      newRange: {
-        minPrice: target?.suggestedMinPrice ?? 3.2,
-        maxPrice: target?.suggestedMaxPrice ?? 3.7,
-      },
-      estimatedApr: target?.estimatedApr ?? 21.7,
-    },
-  };
-}

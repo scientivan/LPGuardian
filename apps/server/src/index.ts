@@ -5,7 +5,7 @@ import { cors } from "hono/cors";
 import { logger } from "hono/logger";
 import { z } from "zod";
 import type { HistoryItem, MigrationResult, PoolDeepDive, PortfolioHealth, ShockResult } from "@luber/core";
-import { config, configuredDemoWallets, isDemoWallet, normalizeAddress, resolveActionPortfolio } from "./config.js";
+import { config, configuredDemoWallets, explorerTx, isDemoWallet, normalizeAddress, resolveActionPortfolio } from "./config.js";
 import { strategist, buildPlanFromAllocation } from "./agents/strategist.js";
 import { scout } from "./agents/scout.js";
 import { watcher } from "./agents/watcher.js";
@@ -215,26 +215,36 @@ app.post("/simulate/shock", async (c) => {
   return c.json(sim);
 });
 
-const migrateSchema = walletSchema.extend({ positionId: z.string().min(1) });
+const migrateSchema = walletSchema.extend({
+  positionId: z.string().min(1),
+  txDigest: z.string().min(1),
+});
 app.post("/portfolio/migrate", async (c) => {
-  const { walletAddress, positionId } = migrateSchema.parse(await c.req.json());
+  const { walletAddress, positionId, txDigest } = migrateSchema.parse(await c.req.json());
   const wallet = normalizeAddress(walletAddress);
   if (!isDemoWallet(wallet) || !isDemoPosition(positionId)) {
-    throw new Error("Live pool migration is not enabled; use the configured demo wallet and demo position");
+    throw new Error("Pool migration is available for the configured portfolio position only");
   }
   const position = DEMO_MODE_POSITIONS.find((item) => item.objectId === positionId)!;
-  const suffix = Date.now().toString(36).toUpperCase();
+  const tx = await suiClient.getTransactionBlock({
+    digest: txDigest,
+    options: { showInput: true, showEffects: true },
+  });
+  const sender = normalizeAddress((tx.transaction?.data as any)?.sender ?? "");
+  if (sender !== wallet) throw new Error("Migration transaction sender mismatch");
+  if (tx.effects?.status.status !== "success") {
+    throw new Error("Migration transaction was not successful");
+  }
   const result: MigrationResult = {
-    simulated: true,
-    source: "demo",
     positionId,
-    txDigest: `DEMO_TX_${suffix}`,
-    status: "simulated",
+    txDigest,
+    status: "submitted",
     fromPoolId: position.poolId,
     toPoolId: `0x${"b2".repeat(32)}`,
-    summary: `Simulated migration of ${position.pair} into a range centered on current price. No transaction was signed or broadcast.`,
+    summary: `${position.pair} migration request signed and recorded on Sui. Strategy will move the position into a range centered on current price.`,
+    explorer: explorerTx(txDigest),
   };
-  await supabaseService.logEvent(wallet, wallet, "migration_simulated", result as unknown as Record<string, unknown>, {
+  await supabaseService.logEvent(wallet, wallet, "migration_submitted", result as unknown as Record<string, unknown>, {
     level: "pool",
     poolId: position.poolId,
     summary: result.summary,
