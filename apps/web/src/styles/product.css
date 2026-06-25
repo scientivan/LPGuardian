@@ -228,7 +228,15 @@
 .panel h2 { margin: 4px 0 12px; font-size: 25px; }
 .form-row, .action-bar { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
 .form-row input { min-width: 180px; flex: 1; border: var(--product-line); background: rgba(255,255,255,.45); padding: 13px 14px; font: inherit; }
-.wallet-chip { margin-right: auto; padding: 9px 12px; border: var(--product-line); background: var(--product-mint); font-weight: 800; }
+.wallet-chip { margin-right: auto; padding: 9px 12px; border: var(--product-line); background: var(--product-mint); font-weight: 800; cursor: pointer; }
+.wallet-menu-wrap { position: relative; margin-right: auto; }
+.wallet-menu { position: absolute; top: calc(100% + 6px); left: 0; z-index: 30; min-width: 220px; display: flex; flex-direction: column; border: var(--product-line); background: var(--product-paper, #fff); box-shadow: 6px 6px 0 rgba(0,0,0,.85); }
+.wallet-menu-label { padding: 8px 12px; font-size: 11px; letter-spacing: .08em; text-transform: uppercase; color: #777; border-bottom: var(--product-line); }
+.wallet-menu-item { padding: 11px 12px; text-align: left; background: none; border: 0; border-bottom: 1px solid rgba(0,0,0,.12); font: inherit; font-weight: 700; cursor: pointer; }
+.wallet-menu-item:last-child { border-bottom: 0; }
+.wallet-menu-item:hover { background: var(--product-mint); }
+.wallet-menu-item.active { background: var(--product-mint); }
+.wallet-menu-item.danger { color: #b00020; }
 .metric-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 18px; }
 .metric { display: grid; gap: 5px; min-height: 128px; }
 .metric span, .metric small { color: #666; }

@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate, useParams, useSearchParams } from "react-router-dom";
-import { useCurrentAccount, useDAppKit, useWallets } from "@mysten/dapp-kit-react";
+import { useCurrentAccount, useCurrentWallet, useDAppKit, useWallets } from "@mysten/dapp-kit-react";
 import { Transaction } from "@mysten/sui/transactions";
 import type { PoolDeepDive, PortfolioHealth, RebalanceIntent, ShockResult } from "@luber/core";
 import { ProductShell } from "../components/ProductShell.js";
@@ -24,13 +24,64 @@ import "../styles/product.css";
 
 function ConnectButton() {
   const account = useCurrentAccount();
+  const currentWallet = useCurrentWallet();
   const wallets = useWallets();
   const dAppKit = useDAppKit();
-  if (account) return <span className="wallet-chip">{short(account.address)}</span>;
+  const [open, setOpen] = useState(false);
+
+  // Not connected: pick a wallet (popup). One wallet → connect directly; many → list.
+  if (!account) {
+    if (wallets.length === 0) return <span className="wallet-chip">No Sui wallet detected</span>;
+    if (wallets.length === 1) {
+      return (
+        <button className="button primary" onClick={() => void dAppKit.connectWallet({ wallet: wallets[0] })}>
+          Connect wallet
+        </button>
+      );
+    }
+    return (
+      <div className="wallet-menu-wrap">
+        <button className="button primary" onClick={() => setOpen((v) => !v)}>Connect wallet ▾</button>
+        {open && (
+          <div className="wallet-menu">
+            {wallets.map((w) => (
+              <button
+                key={w.name}
+                className="wallet-menu-item"
+                onClick={() => { setOpen(false); void dAppKit.connectWallet({ wallet: w }); }}
+              >
+                {w.name}
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  // Connected: show the active account + let the user switch among AUTHORIZED accounts.
+  const accounts = currentWallet?.accounts ?? [];
   return (
-    <button className="button primary" onClick={() => wallets[0] && dAppKit.connectWallet({ wallet: wallets[0] })}>
-      Connect wallet
-    </button>
+    <div className="wallet-menu-wrap">
+      <button className="wallet-chip" onClick={() => setOpen((v) => !v)}>{short(account.address)} ▾</button>
+      {open && (
+        <div className="wallet-menu">
+          {accounts.length > 1 && <div className="wallet-menu-label">Switch account</div>}
+          {accounts.map((a) => (
+            <button
+              key={a.address}
+              className={`wallet-menu-item${a.address === account.address ? " active" : ""}`}
+              onClick={() => { dAppKit.switchAccount({ account: a }); setOpen(false); }}
+            >
+              {short(a.address)}{a.address === account.address ? " ✓" : ""}
+            </button>
+          ))}
+          <button className="wallet-menu-item danger" onClick={() => { void dAppKit.disconnectWallet(); setOpen(false); }}>
+            Disconnect
+          </button>
+        </div>
+      )}
+    </div>
   );
 }
 
